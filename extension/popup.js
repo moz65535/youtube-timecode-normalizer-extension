@@ -1,0 +1,247 @@
+(function () {
+  "use strict";
+
+  const elements = {
+    formatMode: document.getElementById("formatMode"),
+    removeSi: document.getElementById("removeSi"),
+    removeSiWithoutTime: document.getElementById("removeSiWithoutTime"),
+    copyBackupBeforeEdit: document.getElementById("copyBackupBeforeEdit"),
+    preserveList: document.getElementById("preserveList"),
+    flagListUrls: document.getElementById("flagListUrls"),
+    repairMalformedTime: document.getElementById("repairMalformedTime"),
+    manualInput: document.getElementById("manualInput"),
+    previewManual: document.getElementById("previewManual"),
+    copyConvertedText: document.getElementById("copyConvertedText"),
+    refreshLinks: document.getElementById("refreshLinks"),
+    copyNormalizedLinks: document.getElementById("copyNormalizedLinks"),
+    undoLastChange: document.getElementById("undoLastChange"),
+    copySuspiciousLinks: document.getElementById("copySuspiciousLinks"),
+    status: document.getElementById("status"),
+    filters: document.getElementById("filters"),
+    results: document.getElementById("results"),
+    suspicious: document.getElementById("suspicious")
+  };
+
+  let currentResults = [];
+  let currentConvertedText = "";
+  let currentSource = "page";
+
+  function status(message) {
+    elements.status.textContent = message;
+  }
+
+  async function getActiveTab() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab;
+  }
+
+  function currentOptions() {
+    return {
+      formatMode: elements.formatMode.value,
+      removeSi: elements.removeSi.checked,
+      removeSiWithoutTime: elements.removeSiWithoutTime.checked,
+      copyBackupBeforeEdit: elements.copyBackupBeforeEdit.checked,
+      preserveList: elements.preserveList.checked,
+      flagListUrls: elements.flagListUrls.checked,
+      repairMalformedTime: elements.repairMalformedTime.checked
+    };
+  }
+
+  async function loadSettings() {
+    const stored = await chrome.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+    elements.formatMode.value = stored.formatMode;
+    elements.removeSi.checked = Boolean(stored.removeSi);
+    elements.removeSiWithoutTime.checked = Boolean(stored.removeSiWithoutTime);
+    elements.copyBackupBeforeEdit.checked = Boolean(stored.copyBackupBeforeEdit);
+    elements.preserveList.checked = Boolean(stored.preserveList);
+    elements.flagListUrls.checked = stored.flagListUrls !== false;
+    elements.repairMalformedTime.checked = stored.repairMalformedTime !== false;
+  }
+
+  async function saveSettings() {
+    await chrome.storage.sync.set(currentOptions());
+    if (currentSource === "manual") {
+      previewManualText();
+      return;
+    }
+    await refreshLinks();
+  }
+
+  function reasonLabel(reason) {
+    const labels = {
+      "already-normalized": "正規化済み",
+      normalized: "変換可能",
+      "si-removed": "si除去",
+      "no-timecode": "タイムコードなし",
+      "not-video-url": "動画URL以外",
+      "unsupported-timecode": "未対応の時刻",
+      "malformed-timecode": "崩れた時刻指定",
+      "not-youtube": "YouTube以外",
+      "invalid-url": "URL不正"
+    };
+    return labels[reason] || reason;
+  }
+
+  function activeReasons() {
+    return new Set(
+      Array.from(elements.filters.querySelectorAll("input[type='checkbox']:checked")).map((input) => input.value)
+    );
+  }
+
+  function filteredResults(results) {
+    const reasons = activeReasons();
+    return results.filter((item) => reasons.has(item.reason));
+  }
+
+  function suspiciousResults(results) {
+    const showListUrls = elements.flagListUrls.checked;
+    return results.filter((item) => item.suspicious || item.hasMalformedTime || (showListUrls && item.hasList) || (item.reason !== "normalized" && item.reason !== "already-normalized"));
+  }
+
+  function renderList(container, results, includeOnlySuspicious) {
+    const items = includeOnlySuspicious
+      ? suspiciousResults(results)
+      : filteredResults(results);
+
+    container.textContent = "";
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "meta";
+      empty.textContent = "表示できるリンクはありません。";
+      container.appendChild(empty);
+      return;
+    }
+
+    for (const item of items) {
+      const wrapper = document.createElement("article");
+      wrapper.className = "item";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const badge = document.createElement("span");
+      badge.className = `badge${item.changed ? "" : " warn"}`;
+      badge.textContent = reasonLabel(item.reason);
+      meta.appendChild(badge);
+      if (item.hasList) {
+        const listBadge = document.createElement("span");
+        listBadge.className = "badge warn";
+        listBadge.textContent = "list付き";
+        meta.appendChild(listBadge);
+      }
+      if (item.hasMalformedTime) {
+        const malformedBadge = document.createElement("span");
+        malformedBadge.className = "badge warn";
+        malformedBadge.textContent = "崩れ時刻";
+        meta.appendChild(malformedBadge);
+      }
+
+      const original = document.createElement("div");
+      original.className = "url";
+      original.textContent = item.original;
+      wrapper.append(meta, original);
+
+      if (item.normalized && (item.changed || item.reason === "already-normalized")) {
+        const normalized = document.createElement("div");
+        normalized.className = "url";
+        normalized.textContent = item.normalized;
+        wrapper.appendChild(normalized);
+      }
+
+      container.appendChild(wrapper);
+    }
+  }
+
+  async function refreshLinks() {
+    try {
+      const tab = await getActiveTab();
+      if (!tab || !tab.id) {
+        status("アクティブなタブを取得できません。");
+        return;
+      }
+
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        type: "yt-normalizer-collect-links",
+        options: currentOptions()
+      });
+
+      currentSource = "page";
+      currentResults = response.results || [];
+      renderList(elements.results, currentResults, false);
+      renderList(elements.suspicious, currentResults, true);
+      const convertible = currentResults.filter((item) => item.changed || item.reason === "already-normalized").length;
+      status(`${currentResults.length}件抽出、${convertible}件が正規化対象です。`);
+    } catch (_error) {
+      status("このページでは抽出できません。入力欄のプレビューを使ってください。");
+      currentResults = [];
+      renderList(elements.results, [], false);
+      renderList(elements.suspicious, [], true);
+    }
+  }
+
+  function previewManualText() {
+    const result = YTNormalizer.normalizeText(elements.manualInput.value, currentOptions());
+    currentConvertedText = result.text;
+    currentSource = "manual";
+    currentResults = result.results;
+    renderList(elements.results, currentResults, false);
+    renderList(elements.suspicious, currentResults, true);
+    const changed = currentResults.filter((item) => item.changed).length;
+    status(`${currentResults.length}件検出、${changed}件を変換できます。`);
+  }
+
+  function rerenderCurrentResults() {
+    renderList(elements.results, currentResults, false);
+    renderList(elements.suspicious, currentResults, true);
+    const shown = filteredResults(currentResults).length;
+    status(`${shown}件を表示中です。`);
+  }
+
+  async function copyText(text, doneMessage) {
+    await navigator.clipboard.writeText(text);
+    status(doneMessage);
+  }
+
+  elements.formatMode.addEventListener("change", saveSettings);
+  elements.removeSi.addEventListener("change", saveSettings);
+  elements.removeSiWithoutTime.addEventListener("change", saveSettings);
+  elements.copyBackupBeforeEdit.addEventListener("change", saveSettings);
+  elements.preserveList.addEventListener("change", saveSettings);
+  elements.flagListUrls.addEventListener("change", saveSettings);
+  elements.repairMalformedTime.addEventListener("change", saveSettings);
+  elements.filters.addEventListener("change", rerenderCurrentResults);
+  elements.refreshLinks.addEventListener("click", refreshLinks);
+  elements.undoLastChange.addEventListener("click", async () => {
+    const tab = await getActiveTab();
+    if (!tab || !tab.id) {
+      status("アクティブなタブを取得できません。");
+      return;
+    }
+
+    try {
+      const response = await chrome.tabs.sendMessage(tab.id, { type: "yt-normalizer-undo-last-change" });
+      status(response && response.restored ? "直前の変更を元に戻しました。" : "元に戻せる変更がありません。");
+    } catch (_error) {
+      status("このページでは元に戻せません。");
+    }
+  });
+  elements.previewManual.addEventListener("click", previewManualText);
+  elements.copyConvertedText.addEventListener("click", () => {
+    if (!currentConvertedText) previewManualText();
+    copyText(currentConvertedText || "", "変換後テキストをコピーしました。");
+  });
+  elements.copyNormalizedLinks.addEventListener("click", () => {
+    const text = filteredResults(currentResults)
+      .filter((item) => item.changed || item.reason === "already-normalized")
+      .map((item) => item.normalized)
+      .join("\n");
+    copyText(text, "正規化URLをコピーしました。");
+  });
+  elements.copySuspiciousLinks.addEventListener("click", () => {
+    const text = suspiciousResults(currentResults)
+      .map((item) => `${item.hasMalformedTime ? "崩れ時刻/" : ""}${item.hasList ? "list付き/" : ""}${reasonLabel(item.reason)}\t${item.original}`)
+      .join("\n");
+    copyText(text, "疑わしい対象外をコピーしました。");
+  });
+
+  loadSettings().then(refreshLinks);
+})();

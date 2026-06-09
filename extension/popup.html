@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YouTube Timecode Normalizer</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>YouTube Timecode Normalizer</h1>
+      </header>
+
+      <section class="panel">
+        <label for="formatMode">変換形式</label>
+        <select id="formatMode">
+          <option value="preserve">変換前の形式に合わせる</option>
+          <option value="www">www.youtube.comにする</option>
+          <option value="short">youtu.beにする</option>
+        </select>
+        <label class="check-row">
+          <input id="removeSi" type="checkbox">
+          <span>タイムコード付きURLの si を除去する</span>
+        </label>
+        <label class="check-row">
+          <input id="removeSiWithoutTime" type="checkbox">
+          <span>タイムコードなしの si も除去する</span>
+        </label>
+        <label class="check-row">
+          <input id="copyBackupBeforeEdit" type="checkbox">
+          <span>変更前テキストをバックアップとしてクリップボードへコピーする</span>
+        </label>
+        <label class="check-row">
+          <input id="preserveList" type="checkbox">
+          <span>list パラメータを保持する</span>
+        </label>
+        <label class="check-row">
+          <input id="flagListUrls" type="checkbox">
+          <span>list パラメータ付きURLを疑わしい対象として表示する</span>
+        </label>
+        <label class="check-row">
+          <input id="repairMalformedTime" type="checkbox">
+          <span>崩れた時刻指定を救済する</span>
+        </label>
+      </section>
+
+      <section class="panel">
+        <label for="manualInput">プレビュー入力</label>
+        <textarea id="manualInput" rows="5" placeholder="URLを含むテキストを貼り付け"></textarea>
+        <div class="actions">
+          <button id="previewManual" type="button">プレビュー</button>
+          <button id="copyConvertedText" type="button">変換後テキストをコピー</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="toolbar">
+          <h2>抽出リンク</h2>
+          <div class="actions">
+            <button id="refreshLinks" type="button">抽出</button>
+            <button id="copyNormalizedLinks" type="button">正規化URLをコピー</button>
+            <button id="undoLastChange" type="button">直前の変更を元に戻す</button>
+          </div>
+        </div>
+        <p id="status" aria-live="polite"></p>
+        <fieldset id="filters" class="filters">
+          <legend>表示カテゴリ</legend>
+          <label><input type="checkbox" value="normalized" checked>変換可能</label>
+          <label><input type="checkbox" value="si-removed" checked>si除去</label>
+          <label><input type="checkbox" value="already-normalized" checked>正規化済み</label>
+          <label><input type="checkbox" value="no-timecode" checked>タイムコードなし</label>
+          <label><input type="checkbox" value="not-video-url" checked>動画URL以外</label>
+          <label><input type="checkbox" value="not-youtube" checked>YouTube以外</label>
+          <label><input type="checkbox" value="unsupported-timecode" checked>未対応の時刻</label>
+          <label><input type="checkbox" value="malformed-timecode" checked>崩れた時刻指定</label>
+          <label><input type="checkbox" value="invalid-url" checked>URL不正</label>
+        </fieldset>
+        <div id="results" class="results"></div>
+      </section>
+
+      <section class="panel">
+        <div class="toolbar">
+          <h2>疑わしい対象外</h2>
+          <button id="copySuspiciousLinks" type="button">コピー</button>
+        </div>
+        <div id="suspicious" class="results compact"></div>
+      </section>
+    </main>
+    <script src="normalizer.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
