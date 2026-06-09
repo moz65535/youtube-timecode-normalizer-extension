@@ -5,6 +5,7 @@
     formatMode: document.getElementById("formatMode"),
     removeSi: document.getElementById("removeSi"),
     removeSiWithoutTime: document.getElementById("removeSiWithoutTime"),
+    removeFeature: document.getElementById("removeFeature"),
     copyBackupBeforeEdit: document.getElementById("copyBackupBeforeEdit"),
     preserveList: document.getElementById("preserveList"),
     flagListUrls: document.getElementById("flagListUrls"),
@@ -40,6 +41,7 @@
       formatMode: elements.formatMode.value,
       removeSi: elements.removeSi.checked,
       removeSiWithoutTime: elements.removeSiWithoutTime.checked,
+      removeFeature: elements.removeFeature.checked,
       copyBackupBeforeEdit: elements.copyBackupBeforeEdit.checked,
       preserveList: elements.preserveList.checked,
       flagListUrls: elements.flagListUrls.checked,
@@ -52,6 +54,7 @@
     elements.formatMode.value = stored.formatMode;
     elements.removeSi.checked = Boolean(stored.removeSi);
     elements.removeSiWithoutTime.checked = Boolean(stored.removeSiWithoutTime);
+    elements.removeFeature.checked = stored.removeFeature !== false;
     elements.copyBackupBeforeEdit.checked = Boolean(stored.copyBackupBeforeEdit);
     elements.preserveList.checked = Boolean(stored.preserveList);
     elements.flagListUrls.checked = stored.flagListUrls !== false;
@@ -72,6 +75,7 @@
       "already-normalized": "正規化済み",
       normalized: "変換可能",
       "si-removed": "si除去",
+      "feature-removed": "feature除去",
       "no-timecode": "タイムコードなし",
       "not-video-url": "動画URL以外",
       "unsupported-timecode": "未対応の時刻",
@@ -204,6 +208,7 @@
   elements.formatMode.addEventListener("change", saveSettings);
   elements.removeSi.addEventListener("change", saveSettings);
   elements.removeSiWithoutTime.addEventListener("change", saveSettings);
+  elements.removeFeature.addEventListener("change", saveSettings);
   elements.copyBackupBeforeEdit.addEventListener("change", saveSettings);
   elements.preserveList.addEventListener("change", saveSettings);
   elements.flagListUrls.addEventListener("change", saveSettings);

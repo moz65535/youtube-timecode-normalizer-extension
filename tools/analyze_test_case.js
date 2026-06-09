@@ -10,7 +10,7 @@ if (!filePath) {
 }
 
 const input = fs.readFileSync(filePath, "utf8");
-const options = { formatMode: "www", removeSi: true };
+const options = { formatMode: "www", removeSi: true, removeFeature: true };
 const normalized = globalThis.YTNormalizer.normalizeText(input, options);
 const counts = {};
 

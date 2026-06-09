@@ -4,7 +4,7 @@ const path = require("path");
 require(path.resolve("extension/normalizer.js"));
 
 const targetDir = process.argv[2] || "test/cases/real";
-const options = { formatMode: "www", removeSi: true, removeSiWithoutTime: false, preserveList: false };
+const options = { formatMode: "www", removeSi: true, removeSiWithoutTime: false, removeFeature: true, preserveList: false };
 
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

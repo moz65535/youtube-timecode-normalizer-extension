@@ -28,6 +28,10 @@
           <span>タイムコードなしの si も除去する</span>
         </label>
         <label class="check-row">
+          <input id="removeFeature" type="checkbox">
+          <span>feature パラメータを除去する</span>
+        </label>
+        <label class="check-row">
           <input id="copyBackupBeforeEdit" type="checkbox">
           <span>変更前テキストをバックアップとしてクリップボードへコピーする</span>
         </label>
@@ -68,6 +72,7 @@
           <legend>表示カテゴリ</legend>
           <label><input type="checkbox" value="normalized" checked>変換可能</label>
           <label><input type="checkbox" value="si-removed" checked>si除去</label>
+          <label><input type="checkbox" value="feature-removed" checked>feature除去</label>
           <label><input type="checkbox" value="already-normalized" checked>正規化済み</label>
           <label><input type="checkbox" value="no-timecode" checked>タイムコードなし</label>
           <label><input type="checkbox" value="not-video-url" checked>動画URL以外</label>

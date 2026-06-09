@@ -8,6 +8,7 @@
     formatMode: MODE_PRESERVE,
     removeSi: false,
     removeSiWithoutTime: false,
+    removeFeature: true,
     copyBackupBeforeEdit: false,
     preserveList: false,
     flagListUrls: true,
@@ -113,6 +114,9 @@
     if (!options.removeSi && sourceUrl.searchParams.has("si")) {
       targetUrl.searchParams.set("si", sourceUrl.searchParams.get("si"));
     }
+    if (!options.removeFeature && sourceUrl.searchParams.has("feature")) {
+      targetUrl.searchParams.set("feature", sourceUrl.searchParams.get("feature"));
+    }
     if (options.preserveList && sourceUrl.searchParams.has("list")) {
       targetUrl.searchParams.set("list", sourceUrl.searchParams.get("list"));
     }
@@ -139,12 +143,17 @@
     return longUrl.toString();
   }
 
-  function removeSiOnlyUrl(url, candidate) {
+  function removeMetadataOnlyUrl(url, candidate, options) {
     const cleanedUrl = new URL(url.toString());
-    cleanedUrl.searchParams.delete("si");
+    const hadSi = cleanedUrl.searchParams.has("si");
+    const hadFeature = cleanedUrl.searchParams.has("feature");
+    if (options.removeSiWithoutTime) cleanedUrl.searchParams.delete("si");
+    if (options.removeFeature) cleanedUrl.searchParams.delete("feature");
     const cleaned = cleanedUrl.toString();
-    if (/^https?:\/\//i.test(candidate)) return cleaned;
-    return cleaned.replace(/^https?:\/\//i, "");
+    const normalized = /^https?:\/\//i.test(candidate) ? cleaned : cleaned.replace(/^https?:\/\//i, "");
+    const removedSi = hadSi && !cleanedUrl.searchParams.has("si");
+    const removedFeature = hadFeature && !cleanedUrl.searchParams.has("feature");
+    return { normalized, removedSi, removedFeature };
   }
 
   function normalizeUrl(raw, optionsOrMode) {
@@ -160,7 +169,7 @@
     }
 
     if (!isYoutubeHost(url.hostname)) {
-    return { changed: false, normalized: candidate, reason: "not-youtube" };
+      return { changed: false, normalized: candidate, reason: "not-youtube" };
     }
 
     const hasList = url.searchParams.has("list");
@@ -171,12 +180,13 @@
 
     const time = getRawTimeValue(candidate, url, options);
     if (!time) {
-      if (options.removeSiWithoutTime && url.searchParams.has("si")) {
-        const normalized = removeSiOnlyUrl(url, candidate);
+      if ((options.removeSiWithoutTime && url.searchParams.has("si")) || (options.removeFeature && url.searchParams.has("feature"))) {
+        const result = removeMetadataOnlyUrl(url, candidate, options);
+        const reason = result.removedFeature ? "feature-removed" : "si-removed";
         return {
-          changed: normalized !== candidate,
-          normalized,
-          reason: normalized !== candidate ? "si-removed" : "no-timecode",
+          changed: result.normalized !== candidate,
+          normalized: result.normalized,
+          reason: result.normalized !== candidate ? reason : "no-timecode",
           hasList
         };
       }
