@@ -302,8 +302,12 @@
   }
 
   async function copyText(text, doneMessage) {
-    await navigator.clipboard.writeText(text);
-    status(doneMessage);
+    try {
+      await navigator.clipboard.writeText(text);
+      status(doneMessage);
+    } catch (_error) {
+      status("クリップボードへコピーできませんでした。");
+    }
   }
 
   elements.formatMode.addEventListener("change", saveSettings);

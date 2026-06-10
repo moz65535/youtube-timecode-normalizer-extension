@@ -68,6 +68,17 @@ async function sendTabMessage(tabId, message) {
   }
 }
 
+function responseErrorMessage(response) {
+  if (!response || !response.error) return null;
+  const messages = {
+    "backup-copy-failed": "変更前テキストをクリップボードへコピーできなかったため、編集を中止しました。",
+    "clipboard-copy-failed": "クリップボードへコピーできませんでした。",
+    "normalize-failed": "選択範囲の正規化に失敗しました。",
+    "undo-failed": "元に戻す処理に失敗しました。"
+  };
+  return messages[response.error] || "処理に失敗しました。";
+}
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab || !tab.id) return;
 
@@ -96,6 +107,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       options
     });
 
+    const errorMessage = responseErrorMessage(response);
+    if (errorMessage) {
+      await notifyTab(tab.id, errorMessage);
+      return;
+    }
+
     if (response && response.changed) {
       await notifyTab(tab.id, `${response.count}件のURLを正規化しました。`);
       return;
@@ -109,6 +126,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const response = await sendTabMessage(tab.id, {
       type: "yt-normalizer-undo-last-change"
     });
+
+    const errorMessage = responseErrorMessage(response);
+    if (errorMessage) {
+      await notifyTab(tab.id, errorMessage);
+      return;
+    }
 
     await notifyTab(tab.id, response && response.restored ? "直前の変更を元に戻しました。" : "元に戻せる変更がありません。");
   }

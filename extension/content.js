@@ -27,10 +27,19 @@
     window.setTimeout(() => toast.remove(), 2600);
   }
 
-  async function copyBackupIfEnabled(text, options) {
-    if (options && options.copyBackupBeforeEdit) {
+  async function writeClipboard(text, failureMessage) {
+    try {
       await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_error) {
+      if (failureMessage) showToast(failureMessage);
+      return false;
     }
+  }
+
+  async function copyBackupIfEnabled(text, options) {
+    if (!options || !options.copyBackupBeforeEdit) return true;
+    return writeClipboard(text, "変更前テキストをクリップボードへコピーできなかったため、編集を中止しました。");
   }
 
   function dispatchInput(element, text) {
@@ -46,7 +55,9 @@
     const changedCount = result.results.filter((item) => item.changed).length;
     if (!changedCount) return { changed: false, count: 0 };
 
-    await copyBackupIfEnabled(selected, options);
+    const backupCopied = await copyBackupIfEnabled(selected, options);
+    if (!backupCopied) return { changed: false, count: 0, error: "backup-copy-failed" };
+
     element.setRangeText(result.text, start, end, "select");
     dispatchInput(element, result.text);
     lastUndo = {
@@ -72,7 +83,9 @@
     const changedCount = result.results.filter((item) => item.changed).length;
     if (!changedCount) return { changed: false, count: 0 };
 
-    await copyBackupIfEnabled(selectedText, options);
+    const backupCopied = await copyBackupIfEnabled(selectedText, options);
+    if (!backupCopied) return { changed: false, count: 0, error: "backup-copy-failed" };
+
     const range = selection.getRangeAt(0);
     const replacement = document.createTextNode(result.text);
     range.deleteContents();
@@ -104,7 +117,9 @@
     const result = YTNormalizer.normalizeText(selectedText, options);
     const changedCount = result.results.filter((item) => item.changed).length;
     if (changedCount) {
-      await navigator.clipboard.writeText(result.text);
+      const copied = await writeClipboard(result.text, "クリップボードへコピーできませんでした。");
+      if (!copied) return { changed: false, count: changedCount, error: "clipboard-copy-failed" };
+
       lastUndo = {
         type: "clipboard",
         beforeText: selectedText,
@@ -161,7 +176,9 @@
     }
 
     if (lastUndo.type === "clipboard") {
-      await navigator.clipboard.writeText(lastUndo.beforeText);
+      const copied = await writeClipboard(lastUndo.beforeText, "クリップボードへコピーできませんでした。");
+      if (!copied) return { restored: false, error: "clipboard-copy-failed" };
+
       lastUndo = null;
       return { restored: true, copied: true };
     }
@@ -211,7 +228,9 @@
     }
 
     if (message.type === "yt-normalizer-normalize-selection") {
-      normalizeSelection(message.options).then(sendResponse);
+      normalizeSelection(message.options).then(sendResponse).catch(() => {
+        sendResponse({ changed: false, count: 0, error: "normalize-failed" });
+      });
       return true;
     }
 
@@ -221,7 +240,9 @@
     }
 
     if (message.type === "yt-normalizer-undo-last-change") {
-      undoLastChange().then(sendResponse);
+      undoLastChange().then(sendResponse).catch(() => {
+        sendResponse({ restored: false, error: "undo-failed" });
+      });
       return true;
     }
 
