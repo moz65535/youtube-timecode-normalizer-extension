@@ -150,6 +150,37 @@
     }));
   }
 
+  function compactText(text) {
+    return String(text || "").replace(/\s+/g, " ").trim();
+  }
+
+  function clipContextText(text, maxLength) {
+    const compacted = compactText(text);
+    return compacted.length > maxLength ? `${compacted.slice(0, maxLength - 3)}...` : compacted;
+  }
+
+  function linkElementWithContext(link) {
+    const anchorText = compactText(link.textContent || link.getAttribute("aria-label") || link.title);
+    const anchorLabel = clipContextText(anchorText, 80);
+    const parentText = compactText(link.parentElement ? link.parentElement.textContent : "");
+    const anchorIndex = anchorText ? parentText.indexOf(anchorText) : -1;
+    if (anchorIndex >= 0) {
+      return {
+        original: link.href,
+        index: 0,
+        contextBefore: `${parentText.slice(Math.max(0, anchorIndex - 40), anchorIndex)}${anchorLabel}`,
+        contextAfter: parentText.slice(anchorIndex + anchorText.length, anchorIndex + anchorText.length + 40)
+      };
+    }
+
+    return {
+      original: link.href,
+      index: 0,
+      contextBefore: anchorLabel,
+      contextAfter: ""
+    };
+  }
+
   async function undoLastChange() {
     if (!lastUndo) return { restored: false };
 
@@ -195,7 +226,7 @@
 
     if (scope === "page") {
       sources.push(linksWithContext(document.body ? document.body.textContent : ""));
-      sources.push(Array.from(document.links || []).map((link) => ({ original: link.href, index: 0 })));
+      sources.push(Array.from(document.links || []).map(linkElementWithContext));
     }
 
     for (const source of sources) {
