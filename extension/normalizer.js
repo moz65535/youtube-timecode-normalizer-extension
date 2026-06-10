@@ -10,6 +10,7 @@
     removeSiWithoutTime: false,
     removeFeature: true,
     copyBackupBeforeEdit: false,
+    extractionScope: "selection",
     preserveList: false,
     flagListUrls: true,
     repairMalformedTime: true
@@ -235,13 +236,16 @@
   function normalizeText(text, optionsOrMode) {
     const options = toOptions(optionsOrMode);
     const links = extractLinks(text);
+    const sourceText = String(text || "");
     let output = String(text || "");
     const results = [];
 
     for (let index = links.length - 1; index >= 0; index -= 1) {
       const link = links[index];
       const result = normalizeUrl(link.original, options);
-      results.unshift({ original: link.original, ...result });
+      const contextBefore = sourceText.slice(Math.max(0, link.index - 40), link.index);
+      const contextAfter = sourceText.slice(link.index + link.original.length, link.index + link.original.length + 40);
+      results.unshift({ original: link.original, index: link.index, contextBefore, contextAfter, ...result });
       if (result.changed) {
         output = `${output.slice(0, link.index)}${result.normalized}${output.slice(link.index + link.original.length)}`;
       }

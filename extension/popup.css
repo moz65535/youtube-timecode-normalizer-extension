@@ -8,6 +8,8 @@
   --accent: #0b57d0;
   --accent-text: #ffffff;
   --warn: #8a4b00;
+  --diff-old: #fff1f1;
+  --diff-new: #ecfdf3;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,6 +22,8 @@
     --accent: #8ab4f8;
     --accent-text: #111418;
     --warn: #ffcc80;
+    --diff-old: #3a2426;
+    --diff-new: #1f3328;
   }
 }
 
@@ -192,6 +196,25 @@ button:hover {
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   font-size: 12px;
+}
+
+.context {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.diff-line {
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.diff-old {
+  background: var(--diff-old);
+}
+
+.diff-new {
+  background: var(--diff-new);
 }
 
 .compact {

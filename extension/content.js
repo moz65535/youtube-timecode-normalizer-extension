@@ -109,6 +109,24 @@
     return { changed: false, count: 0 };
   }
 
+  function getSelectedText() {
+    const active = document.activeElement;
+    if (active && (active.tagName === "TEXTAREA" || (active.tagName === "INPUT" && active.type === "text"))) {
+      return active.value.slice(active.selectionStart, active.selectionEnd);
+    }
+
+    return window.getSelection() ? window.getSelection().toString() : "";
+  }
+
+  function linksWithContext(text) {
+    const sourceText = String(text || "");
+    return YTNormalizer.extractLinks(sourceText).map((link) => ({
+      ...link,
+      contextBefore: sourceText.slice(Math.max(0, link.index - 40), link.index),
+      contextAfter: sourceText.slice(link.index + link.original.length, link.index + link.original.length + 40)
+    }));
+  }
+
   async function undoLastChange() {
     if (!lastUndo) return { restored: false };
 
@@ -143,13 +161,18 @@
   }
 
   function collectPageLinks(options) {
-    const textLinks = YTNormalizer.extractLinks(document.body ? document.body.innerText : "");
-    const anchorLinks = Array.from(document.links || []).map((link) => ({ original: link.href, index: 0 }));
-    const selection = window.getSelection() ? window.getSelection().toString() : "";
-    const selectionLinks = YTNormalizer.extractLinks(selection);
+    const scope = options && options.extractionScope === "page" ? "page" : "selection";
+    const selection = getSelectedText();
+    const selectionLinks = linksWithContext(selection);
+    const sources = [selectionLinks];
     const byOriginal = new Map();
 
-    for (const source of [selectionLinks, textLinks, anchorLinks]) {
+    if (scope === "page") {
+      sources.push(linksWithContext(document.body ? document.body.innerText : ""));
+      sources.push(Array.from(document.links || []).map((link) => ({ original: link.href, index: 0 })));
+    }
+
+    for (const source of sources) {
       for (const link of source) {
         if (!byOriginal.has(link.original)) byOriginal.set(link.original, link);
       }
@@ -157,11 +180,15 @@
 
     const results = Array.from(byOriginal.values()).map((link) => ({
       original: link.original,
+      index: link.index,
+      contextBefore: link.contextBefore || "",
+      contextAfter: link.contextAfter || "",
       ...YTNormalizer.normalizeUrl(link.original, options)
     }));
 
     return {
       pageTitle: document.title,
+      scope,
       selectionText: selection,
       results
     };

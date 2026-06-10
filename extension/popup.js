@@ -10,16 +10,19 @@
     preserveList: document.getElementById("preserveList"),
     flagListUrls: document.getElementById("flagListUrls"),
     repairMalformedTime: document.getElementById("repairMalformedTime"),
+    extractionScope: document.getElementById("extractionScope"),
     manualInput: document.getElementById("manualInput"),
     previewManual: document.getElementById("previewManual"),
     copyConvertedText: document.getElementById("copyConvertedText"),
     refreshLinks: document.getElementById("refreshLinks"),
     copyNormalizedLinks: document.getElementById("copyNormalizedLinks"),
     undoLastChange: document.getElementById("undoLastChange"),
+    copyDiff: document.getElementById("copyDiff"),
     copySuspiciousLinks: document.getElementById("copySuspiciousLinks"),
     status: document.getElementById("status"),
     filters: document.getElementById("filters"),
     results: document.getElementById("results"),
+    diff: document.getElementById("diff"),
     suspicious: document.getElementById("suspicious")
   };
 
@@ -43,6 +46,7 @@
       removeSiWithoutTime: elements.removeSiWithoutTime.checked,
       removeFeature: elements.removeFeature.checked,
       copyBackupBeforeEdit: elements.copyBackupBeforeEdit.checked,
+      extractionScope: elements.extractionScope.value,
       preserveList: elements.preserveList.checked,
       flagListUrls: elements.flagListUrls.checked,
       repairMalformedTime: elements.repairMalformedTime.checked
@@ -56,6 +60,7 @@
     elements.removeSiWithoutTime.checked = Boolean(stored.removeSiWithoutTime);
     elements.removeFeature.checked = stored.removeFeature !== false;
     elements.copyBackupBeforeEdit.checked = Boolean(stored.copyBackupBeforeEdit);
+    elements.extractionScope.value = stored.extractionScope || "selection";
     elements.preserveList.checked = Boolean(stored.preserveList);
     elements.flagListUrls.checked = stored.flagListUrls !== false;
     elements.repairMalformedTime.checked = stored.repairMalformedTime !== false;
@@ -100,6 +105,75 @@
   function suspiciousResults(results) {
     const showListUrls = elements.flagListUrls.checked;
     return results.filter((item) => item.suspicious || item.hasMalformedTime || (showListUrls && item.hasList) || (item.reason !== "normalized" && item.reason !== "already-normalized"));
+  }
+
+  function changedResults(results) {
+    return results.filter((item) => item.changed && item.normalized && item.normalized !== item.original);
+  }
+
+  function compactContext(text) {
+    return String(text || "").replace(/\s+/g, " ").trim();
+  }
+
+  function contextText(item) {
+    const before = compactContext(item.contextBefore);
+    const after = compactContext(item.contextAfter);
+    if (!before && !after) return "";
+    return `...${before}[URL]${after}...`;
+  }
+
+  function diffText(results) {
+    return changedResults(results)
+      .map((item) => {
+        const context = contextText(item);
+        return `${reasonLabel(item.reason)}${context ? `\n${context}` : ""}\n- ${item.original}\n+ ${item.normalized}`;
+      })
+      .join("\n\n");
+  }
+
+  function renderDiff(container, results) {
+    const items = changedResults(results);
+    container.textContent = "";
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "meta";
+      empty.textContent = "表示できる差分はありません。";
+      container.appendChild(empty);
+      return;
+    }
+
+    for (const item of items) {
+      const wrapper = document.createElement("article");
+      wrapper.className = "item";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = reasonLabel(item.reason);
+      meta.appendChild(badge);
+
+      const context = contextText(item);
+      if (context) {
+        const contextNode = document.createElement("div");
+        contextNode.className = "context";
+        contextNode.textContent = context;
+        wrapper.append(meta, contextNode);
+      } else {
+        wrapper.appendChild(meta);
+      }
+
+      const before = document.createElement("div");
+      before.className = "url diff-line diff-old";
+      before.textContent = `- ${item.original}`;
+
+      const after = document.createElement("div");
+      after.className = "url diff-line diff-new";
+      after.textContent = `+ ${item.normalized}`;
+
+      wrapper.append(before, after);
+      container.appendChild(wrapper);
+    }
   }
 
   function renderList(container, results, includeOnlySuspicious) {
@@ -171,13 +245,19 @@
       currentSource = "page";
       currentResults = response.results || [];
       renderList(elements.results, currentResults, false);
+      renderDiff(elements.diff, currentResults);
       renderList(elements.suspicious, currentResults, true);
       const convertible = currentResults.filter((item) => item.changed || item.reason === "already-normalized").length;
-      status(`${currentResults.length}件抽出、${convertible}件が正規化対象です。`);
+      if (response.scope === "selection" && !response.selectionText) {
+        status("選択範囲がありません。抽出対象をページ全体に切り替えることもできます。");
+      } else {
+        status(`${currentResults.length}件抽出、${convertible}件が正規化対象です。`);
+      }
     } catch (_error) {
       status("このページでは抽出できません。入力欄のプレビューを使ってください。");
       currentResults = [];
       renderList(elements.results, [], false);
+      renderDiff(elements.diff, []);
       renderList(elements.suspicious, [], true);
     }
   }
@@ -188,6 +268,7 @@
     currentSource = "manual";
     currentResults = result.results;
     renderList(elements.results, currentResults, false);
+    renderDiff(elements.diff, currentResults);
     renderList(elements.suspicious, currentResults, true);
     const changed = currentResults.filter((item) => item.changed).length;
     status(`${currentResults.length}件検出、${changed}件を変換できます。`);
@@ -195,6 +276,7 @@
 
   function rerenderCurrentResults() {
     renderList(elements.results, currentResults, false);
+    renderDiff(elements.diff, currentResults);
     renderList(elements.suspicious, currentResults, true);
     const shown = filteredResults(currentResults).length;
     status(`${shown}件を表示中です。`);
@@ -210,6 +292,7 @@
   elements.removeSiWithoutTime.addEventListener("change", saveSettings);
   elements.removeFeature.addEventListener("change", saveSettings);
   elements.copyBackupBeforeEdit.addEventListener("change", saveSettings);
+  elements.extractionScope.addEventListener("change", saveSettings);
   elements.preserveList.addEventListener("change", saveSettings);
   elements.flagListUrls.addEventListener("change", saveSettings);
   elements.repairMalformedTime.addEventListener("change", saveSettings);
@@ -240,6 +323,9 @@
       .map((item) => item.normalized)
       .join("\n");
     copyText(text, "正規化URLをコピーしました。");
+  });
+  elements.copyDiff.addEventListener("click", () => {
+    copyText(diffText(currentResults), "変更差分をコピーしました。");
   });
   elements.copySuspiciousLinks.addEventListener("click", () => {
     const text = suspiciousResults(currentResults)

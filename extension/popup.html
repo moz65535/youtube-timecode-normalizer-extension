@@ -67,6 +67,11 @@
             <button id="undoLastChange" type="button">直前の変更を元に戻す</button>
           </div>
         </div>
+        <label for="extractionScope">抽出対象</label>
+        <select id="extractionScope">
+          <option value="selection">選択範囲のみ</option>
+          <option value="page">ページ全体</option>
+        </select>
         <p id="status" aria-live="polite"></p>
         <fieldset id="filters" class="filters">
           <legend>表示カテゴリ</legend>
@@ -82,6 +87,14 @@
           <label><input type="checkbox" value="invalid-url" checked>URL不正</label>
         </fieldset>
         <div id="results" class="results"></div>
+      </section>
+
+      <section class="panel">
+        <div class="toolbar">
+          <h2>変更差分</h2>
+          <button id="copyDiff" type="button">コピー</button>
+        </div>
+        <div id="diff" class="results compact"></div>
       </section>
 
       <section class="panel">
