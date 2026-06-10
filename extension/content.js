@@ -33,6 +33,11 @@
     }
   }
 
+  function dispatchInput(element, text) {
+    if (!element) return;
+    element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
+  }
+
   async function normalizeTextAreaSelection(element, options) {
     const start = element.selectionStart;
     const end = element.selectionEnd;
@@ -43,7 +48,7 @@
 
     await copyBackupIfEnabled(selected, options);
     element.setRangeText(result.text, start, end, "select");
-    element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: result.text }));
+    dispatchInput(element, result.text);
     lastUndo = {
       type: "text-control",
       element,
@@ -56,6 +61,7 @@
   }
 
   async function normalizeContentEditableSelection(options) {
+    const active = document.activeElement;
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       return { changed: false, count: 0 };
@@ -71,9 +77,11 @@
     const replacement = document.createTextNode(result.text);
     range.deleteContents();
     range.insertNode(replacement);
+    dispatchInput(active, result.text);
     selection.removeAllRanges();
     lastUndo = {
       type: "contenteditable",
+      element: active,
       node: replacement,
       beforeText: selectedText,
       afterText: result.text,
@@ -137,16 +145,17 @@
       if (currentText !== afterText) return { restored: false };
 
       element.setRangeText(beforeText, start, start + afterText.length, "select");
-      element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: beforeText }));
+      dispatchInput(element, beforeText);
       lastUndo = null;
       return { restored: true };
     }
 
     if (lastUndo.type === "contenteditable") {
-      const { node, beforeText } = lastUndo;
+      const { element, node, beforeText } = lastUndo;
       if (!node || !node.isConnected || !node.parentNode) return { restored: false };
       const replacement = document.createTextNode(beforeText);
       node.parentNode.replaceChild(replacement, node);
+      dispatchInput(element, beforeText);
       lastUndo = null;
       return { restored: true };
     }
@@ -168,7 +177,7 @@
     const byOriginal = new Map();
 
     if (scope === "page") {
-      sources.push(linksWithContext(document.body ? document.body.innerText : ""));
+      sources.push(linksWithContext(document.body ? document.body.textContent : ""));
       sources.push(Array.from(document.links || []).map((link) => ({ original: link.href, index: 0 })));
     }
 

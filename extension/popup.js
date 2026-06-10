@@ -273,7 +273,7 @@
         status(`${currentResults.length}件抽出、${convertible}件が正規化対象です。`);
       }
     } catch (_error) {
-      status("このページでは抽出できません。入力欄のプレビューを使ってください。");
+      status("このページでは抽出できないか、読み込み中です。再度抽出するか、入力欄のプレビューを使ってください。");
       currentResults = [];
       renderList(elements.results, [], false);
       renderDiff(elements.diff, []);

@@ -38,13 +38,18 @@ async function getOptions() {
 }
 
 async function copyInActiveTab(tabId, text) {
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    func: async (value) => {
-      await navigator.clipboard.writeText(value);
-    },
-    args: [text]
-  });
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: async (value) => {
+        await navigator.clipboard.writeText(value);
+      },
+      args: [text]
+    });
+    return true;
+  } catch (_error) {
+    return false;
+  }
 }
 
 async function notifyTab(tabId, message) {
@@ -52,6 +57,14 @@ async function notifyTab(tabId, message) {
     await chrome.tabs.sendMessage(tabId, { type: "yt-normalizer-toast", message });
   } catch (_error) {
     // Some restricted pages do not accept content scripts. The context menu action still completes when possible.
+  }
+}
+
+async function sendTabMessage(tabId, message) {
+  try {
+    return await chrome.tabs.sendMessage(tabId, message);
+  } catch (_error) {
+    return null;
   }
 }
 
@@ -72,13 +85,13 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       return;
     }
 
-    await copyInActiveTab(tab.id, result.normalized);
-    await notifyTab(tab.id, "正規化URLをコピーしました。");
+    const copied = await copyInActiveTab(tab.id, result.normalized);
+    await notifyTab(tab.id, copied ? "正規化URLをコピーしました。" : "このページではクリップボードへコピーできません。");
     return;
   }
 
   if (info.menuItemId === MENU_NORMALIZE_SELECTION) {
-    const response = await chrome.tabs.sendMessage(tab.id, {
+    const response = await sendTabMessage(tab.id, {
       type: "yt-normalizer-normalize-selection",
       options
     });
@@ -93,7 +106,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 
   if (info.menuItemId === MENU_UNDO_LAST_CHANGE) {
-    const response = await chrome.tabs.sendMessage(tab.id, {
+    const response = await sendTabMessage(tab.id, {
       type: "yt-normalizer-undo-last-change"
     });
 
