@@ -21,6 +21,8 @@
     `(?:https?:\\/\\/[${URL_SAFE_CHARS}]+|(?:www\\.|m\\.)?youtube\\.com\\/[${URL_SAFE_CHARS}]+|youtu\\.be\\/[${URL_SAFE_CHARS}]+)`,
     "gi"
   );
+  const URL_CONTINUATION_CHAR = /[A-Za-z0-9._~/?#@!$&*+,;=%-]/;
+  const VIDEO_ID_PATTERN = "[A-Za-z0-9_-]{11}";
   const TRAILING_PUNCTUATION = /[.,;:!?、。）」』】\]\)]+$/u;
 
   function trimCandidate(candidate) {
@@ -38,6 +40,14 @@
 
   function isShortHost(hostname) {
     return hostname.toLowerCase() === "youtu.be";
+  }
+
+  function hasUrlStartBoundary(source, index) {
+    if (index <= 0) return true;
+    if (source[index - 1] === "/" && source[index - 2] === "/") {
+      return index <= 2 || /\s/.test(source[index - 3]);
+    }
+    return !URL_CONTINUATION_CHAR.test(source[index - 1]);
   }
 
   function toOptions(optionsOrMode) {
@@ -95,19 +105,19 @@
   function getVideoId(raw, url) {
     if (isShortHost(url.hostname)) {
       const path = url.pathname.replace(/^\/+/, "");
-      const match = path.match(/^([A-Za-z0-9_-]{6,})/);
+      const match = path.match(new RegExp(`^(${VIDEO_ID_PATTERN})(?:$|[/?&#%])`));
       return match ? match[1] : null;
     }
 
-    const liveMatch = url.pathname.match(/^\/live\/([A-Za-z0-9_-]{6,})(?:[/?&#].*)?$/i);
+    const liveMatch = url.pathname.match(new RegExp(`^/live/(${VIDEO_ID_PATTERN})(?:$|[/?&#%])`, "i"));
     if (liveMatch) return liveMatch[1];
 
-    const shortsMatch = url.pathname.match(/^\/shorts\/([A-Za-z0-9_-]{6,})(?:[/?&#].*)?$/i);
+    const shortsMatch = url.pathname.match(new RegExp(`^/shorts/(${VIDEO_ID_PATTERN})(?:$|[/?&#%])`, "i"));
     if (shortsMatch) return shortsMatch[1];
 
     if (!/\/watch\/?$/i.test(url.pathname)) return null;
     const videoId = url.searchParams.get("v");
-    const match = String(videoId || "").match(/^([A-Za-z0-9_-]{6,})/);
+    const match = String(videoId || "").match(new RegExp(`^(${VIDEO_ID_PATTERN})(?:$|[?&#%])`));
     return match ? match[1] : null;
   }
 
@@ -226,6 +236,7 @@
     const source = String(text || "");
     const links = [];
     for (const match of source.matchAll(URL_PATTERN)) {
+      if (!hasUrlStartBoundary(source, match.index || 0)) continue;
       const original = trimCandidate(match[0]);
       if (!original) continue;
       links.push({ original, index: match.index || 0 });
