@@ -66,12 +66,25 @@
     elements.repairMalformedTime.checked = stored.repairMalformedTime !== false;
   }
 
-  async function saveSettings() {
+  async function saveSettings(event) {
     await chrome.storage.sync.set(currentOptions());
+    const settingId = event && event.target ? event.target.id : "";
+
+    if (settingId === "copyBackupBeforeEdit") {
+      status("設定を保存しました。");
+      return;
+    }
+
+    if (settingId === "flagListUrls") {
+      rerenderCurrentResults();
+      return;
+    }
+
     if (currentSource === "manual") {
       previewManualText();
       return;
     }
+
     await refreshLinks();
   }
 
