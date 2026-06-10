@@ -122,6 +122,28 @@
     return `...${before}[URL]${after}...`;
   }
 
+  function createContextNode(item) {
+    const before = compactContext(item.contextBefore);
+    const after = compactContext(item.contextAfter);
+    if (!before && !after) return null;
+
+    const contextNode = document.createElement("div");
+    contextNode.className = "context";
+
+    const beforeNode = document.createElement("span");
+    beforeNode.textContent = `...${before}`;
+
+    const marker = document.createElement("span");
+    marker.className = "context-marker";
+    marker.textContent = "置換URL";
+
+    const afterNode = document.createElement("span");
+    afterNode.textContent = `${after}...`;
+
+    contextNode.append(beforeNode, marker, afterNode);
+    return contextNode;
+  }
+
   function diffText(results) {
     return changedResults(results)
       .map((item) => {
@@ -153,11 +175,8 @@
       badge.textContent = reasonLabel(item.reason);
       meta.appendChild(badge);
 
-      const context = contextText(item);
-      if (context) {
-        const contextNode = document.createElement("div");
-        contextNode.className = "context";
-        contextNode.textContent = context;
+      const contextNode = createContextNode(item);
+      if (contextNode) {
         wrapper.append(meta, contextNode);
       } else {
         wrapper.appendChild(meta);
@@ -165,11 +184,11 @@
 
       const before = document.createElement("div");
       before.className = "url diff-line diff-old";
-      before.textContent = `- ${item.original}`;
+      before.textContent = `変更前: ${item.original}`;
 
       const after = document.createElement("div");
       after.className = "url diff-line diff-new";
-      after.textContent = `+ ${item.normalized}`;
+      after.textContent = `変更後: ${item.normalized}`;
 
       wrapper.append(before, after);
       container.appendChild(wrapper);

@@ -44,7 +44,7 @@ function analyze(filePath) {
   };
 }
 
-const files = walk(targetDir).filter((file) => /\.txt$/i.test(file)).sort((a, b) => a.localeCompare(b, "ja"));
+const files = walk(targetDir).filter((file) => /\.(?:txt|html?)$/i.test(file)).sort((a, b) => a.localeCompare(b, "ja"));
 const results = files.map(analyze);
 const totals = {
   files: results.length,

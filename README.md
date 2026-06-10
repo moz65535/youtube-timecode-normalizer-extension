@@ -96,7 +96,7 @@ popupの「変更前テキストをバックアップとしてクリップボー
 ## リポジトリ構成
 
 - `extension/`: Chrome Manifest V3拡張機能本体
-- `test/cases/real/`: 実Wikiソース由来のテストケース
+- `test/cases/real/`: 実WikiソースまたはHTML由来のテストケース
 - `tools/`: テストケース分析用スクリプト
 
 ## テスト
