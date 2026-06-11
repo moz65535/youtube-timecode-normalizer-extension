@@ -14,6 +14,10 @@
     "<all_urls>"
   ],
   "background": {
+    "scripts": [
+      "normalizer.js",
+      "background.js"
+    ],
     "service_worker": "background.js"
   },
   "icons": {

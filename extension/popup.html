@@ -33,8 +33,12 @@
         </label>
         <label class="check-row">
           <input id="copyBackupBeforeEdit" type="checkbox">
-          <span>変更前テキストをバックアップとしてクリップボードへコピーする</span>
+          <span>変更前テキストをバックアップとしてローカルに保存する</span>
         </label>
+        <div class="backup-summary">
+          <p id="backupInfo" class="meta" aria-live="polite">保存済みバックアップはありません。</p>
+          <button id="copySavedBackup" type="button" disabled>バックアップをコピー</button>
+        </div>
         <label class="check-row">
           <input id="preserveList" type="checkbox">
           <span>list パラメータを保持する</span>

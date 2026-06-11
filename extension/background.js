@@ -1,45 +1,53 @@
-importScripts("normalizer.js");
+if (!globalThis.YTNormalizer && typeof importScripts === "function") {
+  importScripts("normalizer.js");
+}
+
+const extensionApi = globalThis.browser || globalThis.chrome;
 
 const MENU_COPY_LINK = "copy-normalized-link";
 const MENU_NORMALIZE_SELECTION = "normalize-selection";
 const MENU_OPEN_LINK = "open-normalized-link";
 const MENU_UNDO_LAST_CHANGE = "undo-last-change";
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.removeAll(() => {
-  chrome.contextMenus.create({
+extensionApi.runtime.onInstalled.addListener(async () => {
+  if (globalThis.browser) {
+    await extensionApi.contextMenus.removeAll();
+  } else {
+    await new Promise((resolve) => extensionApi.contextMenus.removeAll(resolve));
+  }
+
+  extensionApi.contextMenus.create({
     id: MENU_COPY_LINK,
     title: "リンクをタイムコード正規化URLにしてコピー",
     contexts: ["link"]
   });
 
-  chrome.contextMenus.create({
+  extensionApi.contextMenus.create({
     id: MENU_OPEN_LINK,
     title: "正規化したリンクを開く",
     contexts: ["link"]
   });
 
-  chrome.contextMenus.create({
+  extensionApi.contextMenus.create({
     id: MENU_NORMALIZE_SELECTION,
     title: "選択範囲のタイムコード付きURLを正規化",
     contexts: ["selection", "editable"]
   });
 
-  chrome.contextMenus.create({
+  extensionApi.contextMenus.create({
     id: MENU_UNDO_LAST_CHANGE,
     title: "直前の変更を元に戻す",
     contexts: ["editable", "selection", "page"]
   });
-  });
 });
 
 async function getOptions() {
-  return chrome.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+  return extensionApi.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
 }
 
 async function copyInActiveTab(tabId, text) {
   try {
-    await chrome.scripting.executeScript({
+    await extensionApi.scripting.executeScript({
       target: { tabId },
       func: async (value) => {
         await navigator.clipboard.writeText(value);
@@ -54,7 +62,7 @@ async function copyInActiveTab(tabId, text) {
 
 async function notifyTab(tabId, message) {
   try {
-    await chrome.tabs.sendMessage(tabId, { type: "yt-normalizer-toast", message });
+    await extensionApi.tabs.sendMessage(tabId, { type: "yt-normalizer-toast", message });
   } catch (_error) {
     // Some restricted pages do not accept content scripts. The context menu action still completes when possible.
   }
@@ -62,7 +70,7 @@ async function notifyTab(tabId, message) {
 
 async function sendTabMessage(tabId, message) {
   try {
-    return await chrome.tabs.sendMessage(tabId, message);
+    return await extensionApi.tabs.sendMessage(tabId, message);
   } catch (_error) {
     return null;
   }
@@ -71,7 +79,7 @@ async function sendTabMessage(tabId, message) {
 function responseErrorMessage(response) {
   if (!response || !response.error) return null;
   const messages = {
-    "backup-copy-failed": "変更前テキストをクリップボードへコピーできなかったため、編集を中止しました。",
+    "backup-save-failed": "変更前テキストをローカルへ保存できなかったため、編集を中止しました。",
     "clipboard-copy-failed": "クリップボードへコピーできませんでした。",
     "normalize-failed": "選択範囲の正規化に失敗しました。",
     "undo-failed": "元に戻す処理に失敗しました。"
@@ -79,7 +87,7 @@ function responseErrorMessage(response) {
   return messages[response.error] || "処理に失敗しました。";
 }
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+extensionApi.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab || !tab.id) return;
 
   const options = await getOptions();
@@ -92,7 +100,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
 
     if (info.menuItemId === MENU_OPEN_LINK) {
-      await chrome.tabs.create({ url: result.normalized, active: true });
+      await extensionApi.tabs.create({ url: result.normalized, active: true });
       return;
     }
 

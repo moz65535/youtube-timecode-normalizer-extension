@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  const extensionApi = globalThis.browser || globalThis.chrome;
+  const BACKUP_STORAGE_KEY = "lastTextBackup";
   const elements = {
     formatMode: document.getElementById("formatMode"),
     removeSi: document.getElementById("removeSi"),
@@ -17,6 +19,8 @@
     refreshLinks: document.getElementById("refreshLinks"),
     copyNormalizedLinks: document.getElementById("copyNormalizedLinks"),
     undoLastChange: document.getElementById("undoLastChange"),
+    copySavedBackup: document.getElementById("copySavedBackup"),
+    backupInfo: document.getElementById("backupInfo"),
     copyDiff: document.getElementById("copyDiff"),
     copySuspiciousLinks: document.getElementById("copySuspiciousLinks"),
     status: document.getElementById("status"),
@@ -35,7 +39,7 @@
   }
 
   async function getActiveTab() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await extensionApi.tabs.query({ active: true, currentWindow: true });
     return tab;
   }
 
@@ -54,7 +58,7 @@
   }
 
   async function loadSettings() {
-    const stored = await chrome.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+    const stored = await extensionApi.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
     elements.formatMode.value = stored.formatMode;
     elements.removeSi.checked = Boolean(stored.removeSi);
     elements.removeSiWithoutTime.checked = Boolean(stored.removeSiWithoutTime);
@@ -66,8 +70,49 @@
     elements.repairMalformedTime.checked = stored.repairMalformedTime !== false;
   }
 
+  function formatBackupDate(savedAt) {
+    const date = new Date(savedAt);
+    if (!Number.isFinite(date.getTime())) return "保存日時不明";
+    return new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(date);
+  }
+
+  function renderBackupInfo(backup) {
+    if (!backup || typeof backup.text !== "string") {
+      elements.backupInfo.textContent = "保存済みバックアップはありません。";
+      elements.backupInfo.removeAttribute("title");
+      elements.copySavedBackup.disabled = true;
+      return;
+    }
+
+    const pageLabel = backup.pageTitle || backup.pageUrl || "ページ名不明";
+    elements.backupInfo.textContent =
+      `${formatBackupDate(backup.savedAt)} / ${pageLabel} / ${backup.text.length}文字`;
+    if (backup.pageUrl) {
+      elements.backupInfo.title = backup.pageUrl;
+    } else {
+      elements.backupInfo.removeAttribute("title");
+    }
+    elements.copySavedBackup.disabled = false;
+  }
+
+  async function refreshBackupInfo() {
+    try {
+      const stored = await extensionApi.storage.local.get(BACKUP_STORAGE_KEY);
+      renderBackupInfo(stored[BACKUP_STORAGE_KEY]);
+    } catch (_error) {
+      elements.backupInfo.textContent = "バックアップ情報を読み込めませんでした。";
+      elements.copySavedBackup.disabled = true;
+    }
+  }
+
   async function saveSettings(event) {
-    await chrome.storage.sync.set(currentOptions());
+    await extensionApi.storage.sync.set(currentOptions());
     const settingId = event && event.target ? event.target.id : "";
 
     if (settingId === "copyBackupBeforeEdit") {
@@ -269,7 +314,7 @@
         return;
       }
 
-      const response = await chrome.tabs.sendMessage(tab.id, {
+      const response = await extensionApi.tabs.sendMessage(tab.id, {
         type: "yt-normalizer-collect-links",
         options: currentOptions()
       });
@@ -342,10 +387,25 @@
     }
 
     try {
-      const response = await chrome.tabs.sendMessage(tab.id, { type: "yt-normalizer-undo-last-change" });
+      const response = await extensionApi.tabs.sendMessage(tab.id, { type: "yt-normalizer-undo-last-change" });
       status(response && response.restored ? "直前の変更を元に戻しました。" : "元に戻せる変更がありません。");
     } catch (_error) {
       status("このページでは元に戻せません。");
+    }
+  });
+  elements.copySavedBackup.addEventListener("click", async () => {
+    try {
+      const stored = await extensionApi.storage.local.get(BACKUP_STORAGE_KEY);
+      const backup = stored[BACKUP_STORAGE_KEY];
+      if (!backup || typeof backup.text !== "string") {
+        status("保存済みバックアップはありません。");
+        renderBackupInfo(null);
+        return;
+      }
+
+      await copyText(backup.text, `保存済みバックアップをコピーしました（${backup.text.length}文字）。`);
+    } catch (_error) {
+      status("保存済みバックアップを読み込めませんでした。");
     }
   });
   elements.previewManual.addEventListener("click", previewManualText);
@@ -370,5 +430,11 @@
     copyText(text, "疑わしい対象外をコピーしました。");
   });
 
-  loadSettings().then(refreshLinks);
+  extensionApi.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && changes[BACKUP_STORAGE_KEY]) {
+      renderBackupInfo(changes[BACKUP_STORAGE_KEY].newValue);
+    }
+  });
+
+  Promise.all([loadSettings(), refreshBackupInfo()]).then(refreshLinks);
 })();

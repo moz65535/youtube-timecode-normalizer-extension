@@ -115,6 +115,15 @@ button:hover {
   border-color: var(--accent);
 }
 
+button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+button:disabled:hover {
+  border-color: var(--line);
+}
+
 .actions,
 .toolbar,
 .filters {
@@ -131,6 +140,23 @@ button:hover {
 #status {
   min-height: 18px;
   color: var(--muted);
+}
+
+.backup-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0 7px 24px;
+}
+
+.backup-summary .meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.backup-summary button {
+  flex: 0 0 auto;
 }
 
 .check-row,

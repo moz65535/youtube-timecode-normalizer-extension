@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  const extensionApi = globalThis.browser || globalThis.chrome;
+  const BACKUP_STORAGE_KEY = "lastTextBackup";
   let lastUndo = null;
 
   function showToast(message) {
@@ -37,9 +39,22 @@
     }
   }
 
-  async function copyBackupIfEnabled(text, options) {
+  async function saveBackupIfEnabled(text, options) {
     if (!options || !options.copyBackupBeforeEdit) return true;
-    return writeClipboard(text, "変更前テキストをクリップボードへコピーできなかったため、編集を中止しました。");
+    try {
+      await extensionApi.storage.local.set({
+        [BACKUP_STORAGE_KEY]: {
+          text,
+          savedAt: Date.now(),
+          pageTitle: document.title,
+          pageUrl: location.href
+        }
+      });
+      return true;
+    } catch (_error) {
+      showToast("変更前テキストをローカルへ保存できなかったため、編集を中止しました。");
+      return false;
+    }
   }
 
   function dispatchInput(element, text) {
@@ -55,8 +70,8 @@
     const changedCount = result.results.filter((item) => item.changed).length;
     if (!changedCount) return { changed: false, count: 0 };
 
-    const backupCopied = await copyBackupIfEnabled(selected, options);
-    if (!backupCopied) return { changed: false, count: 0, error: "backup-copy-failed" };
+    const backupSaved = await saveBackupIfEnabled(selected, options);
+    if (!backupSaved) return { changed: false, count: 0, error: "backup-save-failed" };
 
     element.setRangeText(result.text, start, end, "select");
     dispatchInput(element, result.text);
@@ -83,8 +98,8 @@
     const changedCount = result.results.filter((item) => item.changed).length;
     if (!changedCount) return { changed: false, count: 0 };
 
-    const backupCopied = await copyBackupIfEnabled(selectedText, options);
-    if (!backupCopied) return { changed: false, count: 0, error: "backup-copy-failed" };
+    const backupSaved = await saveBackupIfEnabled(selectedText, options);
+    if (!backupSaved) return { changed: false, count: 0, error: "backup-save-failed" };
 
     const range = selection.getRangeAt(0);
     const replacement = document.createTextNode(result.text);
@@ -251,7 +266,7 @@
     };
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  extensionApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === "yt-normalizer-toast") {
       showToast(message.message);
       sendResponse({ ok: true });
