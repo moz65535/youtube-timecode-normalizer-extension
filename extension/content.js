@@ -236,21 +236,23 @@
     const scope = options && options.extractionScope === "page" ? "page" : "selection";
     const selection = getSelectedText();
     const selectionLinks = linksWithContext(selection);
-    const sources = [selectionLinks];
-    const byOriginal = new Map();
+    let links = selectionLinks;
 
     if (scope === "page") {
-      sources.push(linksWithContext(document.body ? document.body.textContent : ""));
-      sources.push(Array.from(document.links || []).map(linkElementWithContext));
-    }
-
-    for (const source of sources) {
-      for (const link of source) {
-        if (!byOriginal.has(link.original)) byOriginal.set(link.original, link);
+      const byOriginal = new Map();
+      const sources = [
+        linksWithContext(document.body ? document.body.textContent : ""),
+        Array.from(document.links || []).map(linkElementWithContext)
+      ];
+      for (const source of sources) {
+        for (const link of source) {
+          if (!byOriginal.has(link.original)) byOriginal.set(link.original, link);
+        }
       }
+      links = Array.from(byOriginal.values());
     }
 
-    const results = Array.from(byOriginal.values()).map((link) => ({
+    const results = links.map((link) => ({
       original: link.original,
       index: link.index,
       contextBefore: link.contextBefore || "",
