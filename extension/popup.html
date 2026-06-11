@@ -103,9 +103,20 @@
 
       <section class="panel">
         <div class="toolbar">
-          <h2>疑わしい対象外</h2>
+          <h2>疑わしい対象外 <span id="suspiciousCount" class="count-label">0件</span></h2>
           <button id="copySuspiciousLinks" type="button">コピー</button>
         </div>
+        <fieldset id="suspiciousFilters" class="filters">
+          <legend>表示カテゴリ</legend>
+          <label><input type="checkbox" value="list" checked>list付き</label>
+          <label><input type="checkbox" value="malformed" checked>崩れた時刻</label>
+          <label><input type="checkbox" value="unsupported-timecode" checked>未対応の時刻</label>
+          <label><input type="checkbox" value="not-video-url" checked>動画URL以外</label>
+          <label><input type="checkbox" value="no-timecode" checked>タイムコードなし</label>
+          <label><input type="checkbox" value="not-youtube" checked>YouTube以外</label>
+          <label><input type="checkbox" value="invalid-url" checked>URL不正</label>
+          <label><input type="checkbox" value="other" checked>その他</label>
+        </fieldset>
         <div id="suspicious" class="results compact"></div>
       </section>
     </main>

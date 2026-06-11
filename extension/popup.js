@@ -23,8 +23,10 @@
     backupInfo: document.getElementById("backupInfo"),
     copyDiff: document.getElementById("copyDiff"),
     copySuspiciousLinks: document.getElementById("copySuspiciousLinks"),
+    suspiciousCount: document.getElementById("suspiciousCount"),
     status: document.getElementById("status"),
     filters: document.getElementById("filters"),
+    suspiciousFilters: document.getElementById("suspiciousFilters"),
     results: document.getElementById("results"),
     diff: document.getElementById("diff"),
     suspicious: document.getElementById("suspicious")
@@ -57,8 +59,24 @@
     };
   }
 
+  async function getStoredOptions() {
+    try {
+      return await extensionApi.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+    } catch (_error) {
+      return extensionApi.storage.local.get(YTNormalizer.DEFAULT_OPTIONS);
+    }
+  }
+
+  async function setStoredOptions(options) {
+    try {
+      await extensionApi.storage.sync.set(options);
+    } catch (_error) {
+      await extensionApi.storage.local.set(options);
+    }
+  }
+
   async function loadSettings() {
-    const stored = await extensionApi.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+    const stored = await getStoredOptions();
     elements.formatMode.value = stored.formatMode;
     elements.removeSi.checked = Boolean(stored.removeSi);
     elements.removeSiWithoutTime.checked = Boolean(stored.removeSiWithoutTime);
@@ -112,7 +130,7 @@
   }
 
   async function saveSettings(event) {
-    await extensionApi.storage.sync.set(currentOptions());
+    await setStoredOptions(currentOptions());
     const settingId = event && event.target ? event.target.id : "";
 
     if (settingId === "copyBackupBeforeEdit") {
@@ -163,6 +181,47 @@
   function suspiciousResults(results) {
     const showListUrls = elements.flagListUrls.checked;
     return results.filter((item) => item.suspicious || item.hasMalformedTime || (showListUrls && item.hasList) || (item.reason !== "normalized" && item.reason !== "already-normalized"));
+  }
+
+  function activeSuspiciousCategories() {
+    return new Set(
+      Array.from(elements.suspiciousFilters.querySelectorAll("input[type='checkbox']:checked"))
+        .map((input) => input.value)
+    );
+  }
+
+  function suspiciousCategories(item) {
+    const categories = [];
+    if (item.hasList) categories.push("list");
+    if (item.hasMalformedTime) categories.push("malformed");
+
+    const reasonCategories = new Set([
+      "unsupported-timecode",
+      "not-video-url",
+      "no-timecode",
+      "not-youtube",
+      "invalid-url"
+    ]);
+    if (reasonCategories.has(item.reason)) {
+      categories.push(item.reason);
+    }
+
+    if (!categories.length) categories.push("other");
+    return categories;
+  }
+
+  function filteredSuspiciousResults(results) {
+    const categories = activeSuspiciousCategories();
+    return suspiciousResults(results).filter((item) =>
+      suspiciousCategories(item).some((category) => categories.has(category))
+    );
+  }
+
+  function updateSuspiciousCount(results) {
+    const total = suspiciousResults(results).length;
+    const shown = filteredSuspiciousResults(results).length;
+    elements.suspiciousCount.textContent = shown === total ? `${shown}件` : `${shown} / ${total}件`;
+    elements.copySuspiciousLinks.disabled = shown === 0;
   }
 
   function changedResults(results) {
@@ -255,10 +314,11 @@
 
   function renderList(container, results, includeOnlySuspicious) {
     const items = includeOnlySuspicious
-      ? suspiciousResults(results)
+      ? filteredSuspiciousResults(results)
       : filteredResults(results);
 
     container.textContent = "";
+    if (includeOnlySuspicious) updateSuspiciousCount(results);
     if (!items.length) {
       const empty = document.createElement("p");
       empty.className = "meta";
@@ -359,6 +419,11 @@
     status(`${shown}件を表示中です。`);
   }
 
+  function rerenderSuspiciousResults() {
+    renderList(elements.suspicious, currentResults, true);
+    status(`疑わしい対象外を${filteredSuspiciousResults(currentResults).length}件表示中です。`);
+  }
+
   async function copyText(text, doneMessage) {
     try {
       await navigator.clipboard.writeText(text);
@@ -378,6 +443,7 @@
   elements.flagListUrls.addEventListener("change", saveSettings);
   elements.repairMalformedTime.addEventListener("change", saveSettings);
   elements.filters.addEventListener("change", rerenderCurrentResults);
+  elements.suspiciousFilters.addEventListener("change", rerenderSuspiciousResults);
   elements.refreshLinks.addEventListener("click", refreshLinks);
   elements.undoLastChange.addEventListener("click", async () => {
     const tab = await getActiveTab();
@@ -424,10 +490,10 @@
     copyText(diffText(currentResults), "変更差分をコピーしました。");
   });
   elements.copySuspiciousLinks.addEventListener("click", () => {
-    const text = suspiciousResults(currentResults)
+    const text = filteredSuspiciousResults(currentResults)
       .map((item) => `${item.hasMalformedTime ? "崩れ時刻/" : ""}${item.hasList ? "list付き/" : ""}${reasonLabel(item.reason)}\t${item.original}`)
       .join("\n");
-    copyText(text, "疑わしい対象外をコピーしました。");
+    copyText(text, "表示中の疑わしい対象外をコピーしました。");
   });
 
   extensionApi.storage.onChanged.addListener((changes, areaName) => {

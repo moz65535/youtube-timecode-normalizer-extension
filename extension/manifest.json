@@ -49,5 +49,11 @@
   "options_ui": {
     "page": "popup.html",
     "open_in_tab": false
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "youtube-timecode-normalizer@moz65535",
+      "strict_min_version": "121.0"
+    }
   }
 }

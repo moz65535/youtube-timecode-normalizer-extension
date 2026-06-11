@@ -62,6 +62,12 @@ h2 {
   font-weight: 700;
 }
 
+.count-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .panel {
   display: grid;
   gap: 8px;

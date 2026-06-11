@@ -42,7 +42,11 @@ extensionApi.runtime.onInstalled.addListener(async () => {
 });
 
 async function getOptions() {
-  return extensionApi.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+  try {
+    return await extensionApi.storage.sync.get(YTNormalizer.DEFAULT_OPTIONS);
+  } catch (_error) {
+    return extensionApi.storage.local.get(YTNormalizer.DEFAULT_OPTIONS);
+  }
 }
 
 async function copyInActiveTab(tabId, text) {
