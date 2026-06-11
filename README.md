@@ -115,6 +115,13 @@ node tools/run_unit_tests.js
 node tools/analyze_all_test_cases.js
 ```
 
+出力を短くしたい場合は、集計のみ、またはレビュー対象のみを出力できます。
+
+```powershell
+node tools/analyze_all_test_cases.js --summary
+node tools/analyze_all_test_cases.js --problems
+```
+
 ## ライセンス
 
 MIT

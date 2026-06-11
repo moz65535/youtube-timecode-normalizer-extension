@@ -52,6 +52,21 @@ const textCases = [
     name: "repairs malformed percent time separator",
     input: "https://www.youtube.com/watch?v=fBRi6v-ZpPM%t=5m17s",
     expected: "https://www.youtube.com/watch?v=fBRi6v-ZpPM&t=317"
+  },
+  {
+    name: "normalizes live URLs",
+    input: "https://www.youtube.com/live/6mdcWcjeQcA?t=2765s",
+    expected: "https://www.youtube.com/watch?v=6mdcWcjeQcA&t=2765"
+  },
+  {
+    name: "normalizes shorts URLs",
+    input: "https://www.youtube.com/shorts/qhH-azW3LJw?t=1m12s",
+    expected: "https://www.youtube.com/watch?v=qhH-azW3LJw&t=72"
+  },
+  {
+    name: "keeps trailing wiki brackets outside URLs",
+    input: "[[動画>>https://youtu.be/qhH-azW3LJw?t=17m12s]]",
+    expected: "[[動画>>https://www.youtube.com/watch?v=qhH-azW3LJw&t=1032]]"
   }
 ];
 
@@ -65,5 +80,20 @@ assert.equal(
   "https://www.youtube.com/watch?v=qhH-azW3LJw&t=60",
   "accepts 11-character video IDs"
 );
+assert.equal(
+  normalizeUrl("https://www.youtube.com/watch?v=qhH-azW3LJw&si=tracking&t=1m", { removeSi: true }).normalized,
+  "https://www.youtube.com/watch?v=qhH-azW3LJw&t=60",
+  "removes si when enabled"
+);
+assert.equal(
+  normalizeUrl("https://www.youtube.com/watch?v=qhH-azW3LJw&feature=share&t=1m", { removeFeature: false }).normalized,
+  "https://www.youtube.com/watch?v=qhH-azW3LJw&feature=share&t=60",
+  "preserves feature when enabled"
+);
+assert.equal(
+  normalizeUrl("https://youtu.be/qhH-azW3LJw?list=PL123&t=1m", { preserveList: true }).normalized,
+  "https://www.youtube.com/watch?v=qhH-azW3LJw&list=PL123&t=60",
+  "preserves list when enabled"
+);
 
-console.log(`ok ${textCases.length + 2} unit tests`);
+console.log(`ok ${textCases.length + 5} unit tests`);
