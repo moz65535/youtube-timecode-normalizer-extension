@@ -95,5 +95,26 @@ assert.equal(
   "https://www.youtube.com/watch?v=qhH-azW3LJw&list=PL123&t=60",
   "preserves list when enabled"
 );
+assert.equal(
+  normalizeUrl("https://www.youtube.com/watch?v=5vNh4QIR5Sc&list=LL&t=468s", { preserveList: true }).normalized,
+  "https://www.youtube.com/watch?v=5vNh4QIR5Sc&t=468",
+  "always removes the liked videos playlist"
+);
+assert.equal(
+  normalizeUrl("https://youtu.be/qhH-azW3LJw?list=WL&index=10&t=1m", { preserveList: true }).normalized,
+  "https://www.youtube.com/watch?v=qhH-azW3LJw&t=60",
+  "always removes watch later and its index"
+);
+assert.deepEqual(
+  {
+    normalized: normalizeUrl("https://www.youtube.com/watch?v=qhH-azW3LJw&list=LL").normalized,
+    reason: normalizeUrl("https://www.youtube.com/watch?v=qhH-azW3LJw&list=LL").reason
+  },
+  {
+    normalized: "https://www.youtube.com/watch?v=qhH-azW3LJw",
+    reason: "personal-list-removed"
+  },
+  "removes a personal playlist without a timecode"
+);
 
-console.log(`ok ${textCases.length + 5} unit tests`);
+console.log(`ok ${textCases.length + 8} unit tests`);

@@ -157,6 +157,7 @@
       normalized: "変換可能",
       "si-removed": "si除去",
       "feature-removed": "feature除去",
+      "personal-list-removed": "個人用list除去",
       "no-timecode": "タイムコードなし",
       "not-video-url": "動画URL以外",
       "unsupported-timecode": "未対応の時刻",
@@ -239,7 +240,7 @@
     return `...${before}[URL]${after}...`;
   }
 
-  function createContextNode(item) {
+  function createContextNode(item, markerText = "置換URL") {
     const before = compactContext(item.contextBefore);
     const after = compactContext(item.contextAfter);
     if (!before && !after) return null;
@@ -252,7 +253,7 @@
 
     const marker = document.createElement("span");
     marker.className = "context-marker";
-    marker.textContent = "置換URL";
+    marker.textContent = markerText;
 
     const afterNode = document.createElement("span");
     afterNode.textContent = `${after}...`;
@@ -353,7 +354,12 @@
       const original = document.createElement("div");
       original.className = "url";
       original.textContent = item.original;
-      wrapper.append(meta, original);
+      wrapper.appendChild(meta);
+      if (includeOnlySuspicious) {
+        const contextNode = createContextNode(item, "対象URL");
+        if (contextNode) wrapper.appendChild(contextNode);
+      }
+      wrapper.appendChild(original);
 
       if (item.normalized && (item.changed || item.reason === "already-normalized")) {
         const normalized = document.createElement("div");

@@ -42,6 +42,10 @@
     return hostname.toLowerCase() === "youtu.be";
   }
 
+  function isPersonalPlaylist(listId) {
+    return /^(?:LL|WL)$/i.test(String(listId || ""));
+  }
+
   function hasUrlStartBoundary(source, index) {
     if (index <= 0) return true;
     if (source[index - 1] === "/" && source[index - 2] === "/") {
@@ -128,10 +132,11 @@
     if (!options.removeFeature && sourceUrl.searchParams.has("feature")) {
       targetUrl.searchParams.set("feature", sourceUrl.searchParams.get("feature"));
     }
-    if (options.preserveList && sourceUrl.searchParams.has("list")) {
-      targetUrl.searchParams.set("list", sourceUrl.searchParams.get("list"));
+    const listId = sourceUrl.searchParams.get("list");
+    if (options.preserveList && listId && !isPersonalPlaylist(listId)) {
+      targetUrl.searchParams.set("list", listId);
     }
-    if (options.preserveList && sourceUrl.searchParams.has("index")) {
+    if (options.preserveList && listId && !isPersonalPlaylist(listId) && sourceUrl.searchParams.has("index")) {
       targetUrl.searchParams.set("index", sourceUrl.searchParams.get("index"));
     }
   }
@@ -158,13 +163,18 @@
     const cleanedUrl = new URL(url.toString());
     const hadSi = cleanedUrl.searchParams.has("si");
     const hadFeature = cleanedUrl.searchParams.has("feature");
+    const hadPersonalList = isPersonalPlaylist(cleanedUrl.searchParams.get("list"));
     if (options.removeSiWithoutTime) cleanedUrl.searchParams.delete("si");
     if (options.removeFeature) cleanedUrl.searchParams.delete("feature");
+    if (hadPersonalList) {
+      cleanedUrl.searchParams.delete("list");
+      cleanedUrl.searchParams.delete("index");
+    }
     const cleaned = cleanedUrl.toString();
     const normalized = /^https?:\/\//i.test(candidate) ? cleaned : cleaned.replace(/^https?:\/\//i, "");
     const removedSi = hadSi && !cleanedUrl.searchParams.has("si");
     const removedFeature = hadFeature && !cleanedUrl.searchParams.has("feature");
-    return { normalized, removedSi, removedFeature };
+    return { normalized, removedSi, removedFeature, removedPersonalList: hadPersonalList };
   }
 
   function normalizeUrl(raw, optionsOrMode) {
@@ -191,9 +201,17 @@
 
     const time = getRawTimeValue(candidate, url, options);
     if (!time) {
-      if ((options.removeSiWithoutTime && url.searchParams.has("si")) || (options.removeFeature && url.searchParams.has("feature"))) {
+      if (
+        (options.removeSiWithoutTime && url.searchParams.has("si")) ||
+        (options.removeFeature && url.searchParams.has("feature")) ||
+        isPersonalPlaylist(url.searchParams.get("list"))
+      ) {
         const result = removeMetadataOnlyUrl(url, candidate, options);
-        const reason = result.removedFeature ? "feature-removed" : "si-removed";
+        const reason = result.removedPersonalList
+          ? "personal-list-removed"
+          : result.removedFeature
+            ? "feature-removed"
+            : "si-removed";
         return {
           changed: result.normalized !== candidate,
           normalized: result.normalized,
