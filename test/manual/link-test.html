@@ -83,6 +83,20 @@
       color: #c33b32;
     }
 
+    .line-status {
+      display: block;
+      min-height: 1.6em;
+      margin-top: 4px;
+    }
+
+    .line-status.match {
+      color: #16833a;
+    }
+
+    .line-status.mismatch {
+      color: #c33b32;
+    }
+
     .note {
       border-left: 4px solid #2878c8;
       padding: 8px 12px;
@@ -133,6 +147,14 @@
       border: 1px solid #8888;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+
+    .count-check {
+      width: 100%;
+      min-height: 90px;
+      box-sizing: border-box;
+      padding: 8px;
+      font: 14px/1.5 ui-monospace, monospace;
     }
 
     button {
@@ -294,15 +316,111 @@
 
     <h2>popup抽出の確認</h2>
     <p>
-      下の試験用テキストだけを選択してpopupを開きます。「選択範囲のみ」で5件抽出され、
-      4件が変換可能、1件が正規化済みと表示されることを確認してください。
-      次に「ページ全体」へ切り替え、上の表内のリンク先URLも抽出されることを確認します。
+      初期設定へ戻したうえで「試験範囲を選択」を押し、popupを開いて「抽出」を押します。
+      抽出対象は「選択範囲のみ」にしてください。
     </p>
-    <pre class="selection-sample">通常形式 https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=17m12s
-短縮形式 https://youtu.be/N3UkUjJ8UiY?t=27m33s
-ライブ https://www.youtube.com/live/6mdcWcjeQcA?t=2765s
-Shorts https://www.youtube.com/shorts/qhH-azW3LJw?t=1m12s
-正規化済み https://www.youtube.com/watch?v=OjVYtizH0ks&amp;t=10905</pre>
+    <div class="editor-actions">
+      <button id="selectPopupSample" type="button">試験範囲を選択</button>
+      <strong id="popupSelectionStatus" aria-live="polite"></strong>
+    </div>
+    <pre id="popupSample" class="selection-sample">変換可能 https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=1m
+正規化済み https://www.youtube.com/watch?v=OjVYtizH0ks&amp;t=10905
+タイムコードなし https://www.youtube.com/watch?v=N3UkUjJ8UiY&amp;si=tracking
+動画URL以外 https://www.youtube.com/@hololive
+YouTube以外 https://example.com/watch?v=qhH-azW3LJw&amp;t=1m
+未対応の時刻 https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=abc
+崩れた時刻 https://youtu.be/PWS1ftGoeb8&amp;t=19m32s
+list付き https://youtu.be/xI28vMLu7XQ?list=PLMF8NocLqJtu0ZEvlLo5lbuqM9x4bUVH9&amp;t=7332
+feature除去 https://www.youtube.com/watch?v=5vNh4QIR5Sc&amp;feature=share
+個人用list除去 https://www.youtube.com/watch?v=5vNh4QIR5Sc&amp;list=LL
+URL不正 https://%</pre>
+
+    <h3>初期表示の期待値</h3>
+    <table>
+      <thead>
+        <tr><th>済</th><th>確認箇所</th><th>期待値</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="checkbox" aria-label="抽出件数を確認"></td><td>ステータス</td><td>11件抽出、6件が正規化対象</td></tr>
+        <tr><td><input type="checkbox" aria-label="差分件数を確認"></td><td>変更差分</td><td>5件</td></tr>
+        <tr><td><input type="checkbox" aria-label="疑わしい件数を確認"></td><td>疑わしい対象外</td><td>9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="文脈表示を確認"></td><td>文脈</td><td>各項目にケース名と対象URLマーカーが表示される</td></tr>
+      </tbody>
+    </table>
+
+    <h3>抽出リンクのカテゴリ別期待件数</h3>
+    <p>他の表示カテゴリをすべてOFFにして、表の対象カテゴリだけをONにして確認します。</p>
+    <table>
+      <thead>
+        <tr><th>済</th><th>カテゴリ</th><th>設定条件</th><th>期待件数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="checkbox" aria-label="変換可能フィルターを確認"></td><td>変換可能</td><td>初期設定</td><td>3件</td></tr>
+        <tr><td><input type="checkbox" aria-label="si除去フィルターを確認"></td><td>si除去</td><td>「タイムコードなしのsiも除去」をON</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="feature除去フィルターを確認"></td><td>feature除去</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="個人用list除去フィルターを確認"></td><td>個人用list除去</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="正規化済みフィルターを確認"></td><td>正規化済み</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="タイムコードなしフィルターを確認"></td><td>タイムコードなし</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="動画URL以外フィルターを確認"></td><td>動画URL以外</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="YouTube以外フィルターを確認"></td><td>YouTube以外</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="未対応時刻フィルターを確認"></td><td>未対応の時刻</td><td>初期設定</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="崩れた時刻指定フィルターを確認"></td><td>崩れた時刻指定</td><td>「崩れた時刻指定を救済する」をOFF</td><td>1件</td></tr>
+        <tr><td><input type="checkbox" aria-label="URL不正フィルターを確認"></td><td>URL不正</td><td>初期設定</td><td>1件</td></tr>
+      </tbody>
+    </table>
+
+    <h3>疑わしい対象外のカテゴリ別期待件数</h3>
+    <p>疑わしい対象外側のフィルターを、対象カテゴリだけONにして確認します。</p>
+    <table>
+      <thead>
+        <tr><th>済</th><th>カテゴリ</th><th>期待表示</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="checkbox" aria-label="list付き疑わしいフィルターを確認"></td><td>list付き</td><td>2 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="崩れた時刻疑わしいフィルターを確認"></td><td>崩れた時刻</td><td>1 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="未対応時刻疑わしいフィルターを確認"></td><td>未対応の時刻</td><td>1 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="動画URL以外疑わしいフィルターを確認"></td><td>動画URL以外</td><td>1 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="タイムコードなし疑わしいフィルターを確認"></td><td>タイムコードなし</td><td>1 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="YouTube以外疑わしいフィルターを確認"></td><td>YouTube以外</td><td>1 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="URL不正疑わしいフィルターを確認"></td><td>URL不正</td><td>1 / 9件</td></tr>
+        <tr><td><input type="checkbox" aria-label="その他疑わしいフィルターを確認"></td><td>その他</td><td>1 / 9件</td></tr>
+      </tbody>
+    </table>
+
+    <h3>コピー機能の確認</h3>
+    <p>
+      全カテゴリをONへ戻してから各コピーボタンを押し、下へ貼り付けます。
+      行数は空行を除いて自動集計されます。
+    </p>
+    <p>
+      <label for="popupNormalizedCopy">正規化URLをコピー（期待値: 6行）</label>
+      <textarea id="popupNormalizedCopy" class="count-check" data-expected-lines="6" placeholder="ここへ貼り付け"></textarea>
+      <strong class="line-status"></strong>
+    </p>
+    <p>
+      <label for="popupDiffCopy">変更差分をコピー（期待値: 15行以上）</label>
+      <textarea id="popupDiffCopy" class="count-check" data-min-lines="15" placeholder="ここへ貼り付け"></textarea>
+      <strong class="line-status"></strong>
+    </p>
+    <p>
+      <label for="popupSuspiciousCopy">疑わしい対象外をコピー（期待値: 9行）</label>
+      <textarea id="popupSuspiciousCopy" class="count-check" data-expected-lines="9" placeholder="ここへ貼り付け"></textarea>
+      <strong class="line-status"></strong>
+    </p>
+
+    <h3>設定切替の確認</h3>
+    <ul>
+      <li><label><input type="checkbox">「崩れた時刻指定を救済する」をOFFにすると、正規化対象が5件になり、「崩れた時刻指定」が1件表示される</label></li>
+      <li><label><input type="checkbox">初期設定へ戻して「タイムコードなしのsiも除去する」をONにすると、正規化対象が7件になり、「si除去」が1件表示される</label></li>
+      <li><label><input type="checkbox">「listパラメータ付きURLを疑わしい対象として表示する」をOFFにすると、疑わしい対象外が8件になる</label></li>
+      <li><label><input type="checkbox">手動入力欄へ試験用テキストを貼り、11件検出、5件を変換できると表示される</label></li>
+      <li><label><input type="checkbox">手動プレビューの変換後テキストと変更差分をコピーできる</label></li>
+    </ul>
+
+    <p>
+      最後に抽出対象を「ページ全体」へ切り替え、上の表にあるリンク先URLも抽出対象になることを確認します。
+      ページ全体では試験用の期待値URLも含まれるため、件数は選択範囲試験とは一致しません。
+    </p>
 
     <h2>通常ページ選択範囲のクリップボード確認</h2>
     <ol>
@@ -406,6 +524,27 @@ Wiki構文 [[ライブ>>https://www.youtube.com/live/6mdcWcjeQcA?t=2765s]]
       savedState.textContent = "未保存";
       richEditor.focus();
     });
+
+    document.getElementById("selectPopupSample").addEventListener("click", () => {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(document.getElementById("popupSample"));
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.getElementById("popupSelectionStatus").textContent = "試験範囲を選択しました。popupを開いてください。";
+    });
+
+    for (const textarea of document.querySelectorAll(".count-check")) {
+      textarea.addEventListener("input", () => {
+        const count = textarea.value.split(/\r?\n/).filter((line) => line.trim()).length;
+        const expected = Number(textarea.dataset.expectedLines || 0);
+        const minimum = Number(textarea.dataset.minLines || 0);
+        const matched = expected ? count === expected : count >= minimum;
+        const status = textarea.nextElementSibling;
+        status.textContent = `${count}行 / ${matched ? "一致" : "不一致"}`;
+        status.className = `line-status ${matched ? "match" : "mismatch"}`;
+      });
+    }
 
     for (const input of document.querySelectorAll(".result-input")) {
       input.addEventListener("input", () => {

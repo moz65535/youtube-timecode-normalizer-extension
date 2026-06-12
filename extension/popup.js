@@ -320,6 +320,7 @@
 
     container.textContent = "";
     if (includeOnlySuspicious) updateSuspiciousCount(results);
+    container.classList.toggle("empty", items.length === 0);
     if (!items.length) {
       const empty = document.createElement("p");
       empty.className = "meta";

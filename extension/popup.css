@@ -193,6 +193,19 @@ button:disabled:hover {
   overflow: auto;
 }
 
+.results.empty {
+  place-items: center;
+}
+
+#suspicious {
+  min-height: 96px;
+}
+
+#suspicious.empty {
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+
 .item {
   display: grid;
   gap: 4px;
