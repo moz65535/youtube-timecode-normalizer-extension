@@ -8,6 +8,7 @@
   "scripts": {
     "build:firefox": "node tools/build_firefox.js",
     "test": "vitest run",
+    "test:smoke": "vitest run --reporter=dot && node tools/check_real_data_baseline.js",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:real": "node tools/analyze_all_test_cases.js --summary",

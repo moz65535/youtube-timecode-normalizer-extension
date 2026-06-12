@@ -24,8 +24,7 @@
 - [ ] textareaの選択範囲を正規化できる
 - [ ] 「直前の変更を元に戻す」でtextareaを変更前へ戻せる
 - [ ] popupで選択範囲を抽出し、表示件数と実際の変換件数が一致する
-- [ ] `npm test`が成功する
-- [ ] `npm run test:real`で異常件数が増えていない
+- [ ] `npm run test:smoke`が成功する
 
 ## 試験用テキスト
 
@@ -172,6 +171,7 @@ YouTube以外 https://example.com/watch?v=qhH-azW3LJw&t=1m
 - [ ] 拡張機能を一度削除し、ブラウザを再起動してから新規読み込みする
 - [ ] 新規読み込み後の初期設定、右クリックメニュー、popupが正しく動く
 - [ ] `npm test`
+- [ ] `npm run test:smoke`
 - [ ] `npm run test:coverage`
 - [ ] `npm run test:real`
 - [ ] 必要に応じて`npm run test:problems`
