@@ -1,0 +1,19 @@
+{
+  "name": "youtube-timecode-normalizer-extension",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:real": "node tools/analyze_all_test_cases.js --summary",
+    "test:problems": "node tools/analyze_all_test_cases.js --problems"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.8",
+    "vitest": "^4.1.8"
+  }
+}
