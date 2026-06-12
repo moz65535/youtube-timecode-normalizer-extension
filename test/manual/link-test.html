@@ -95,6 +95,51 @@
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+
+    .editor-test {
+      width: 100%;
+      min-height: 240px;
+      box-sizing: border-box;
+      padding: 12px;
+      font: 14px/1.6 ui-monospace, monospace;
+      resize: vertical;
+    }
+
+    .editor-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-block: 8px 16px;
+    }
+
+    .rich-editor {
+      min-height: 120px;
+      padding: 12px;
+      border: 1px solid #888;
+      background: Canvas;
+      color: CanvasText;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .rich-editor:focus {
+      outline: 2px solid #2878c866;
+      outline-offset: 2px;
+    }
+
+    .state-output {
+      padding: 10px 12px;
+      border: 1px solid #8888;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      padding: 7px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -258,8 +303,110 @@
 ライブ https://www.youtube.com/live/6mdcWcjeQcA?t=2765s
 Shorts https://www.youtube.com/shorts/qhH-azW3LJw?t=1m12s
 正規化済み https://www.youtube.com/watch?v=OjVYtizH0ks&amp;t=10905</pre>
+
+    <h2>通常ページ選択範囲のクリップボード確認</h2>
+    <ol>
+      <li>下の試験用テキスト全体を選択し、右クリックメニューから正規化します。</li>
+      <li>画面上の試験用テキストが書き換わっていないことを確認します。</li>
+      <li>「正規化後の貼り付け先」へ貼り付け、「一致」と表示されることを確認します。</li>
+      <li>ページ上で右クリックし、「直前の変更を元に戻す」を実行します。</li>
+      <li>「Undo後の貼り付け先」へ貼り付け、「一致」と表示されることを確認します。</li>
+    </ol>
+    <pre class="selection-sample">通常ページ https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=17m12s</pre>
+    <p>
+      <label for="selectionNormalizedResult">正規化後の貼り付け先</label>
+      <input id="selectionNormalizedResult" class="result-input" data-expected="通常ページ https://www.youtube.com/watch?v=qhH-azW3LJw&t=1032" placeholder="ここへ貼り付け">
+      <span class="result-status"></span>
+    </p>
+    <p>
+      <label for="selectionUndoResult">Undo後の貼り付け先</label>
+      <input id="selectionUndoResult" class="result-input" data-expected="通常ページ https://www.youtube.com/watch?v=qhH-azW3LJw&t=17m12s" placeholder="ここへ貼り付け">
+      <span class="result-status"></span>
+    </p>
+    <p class="note">
+      クリップボード書き込み失敗は、権限が付与された通常環境ではこのページから安定して再現できません。
+      失敗時に成功扱いしないことは、障害注入を使う自動テストの対象として別途扱います。
+    </p>
+
+    <h2>textarea直接書き換えの確認</h2>
+    <ol>
+      <li>下のtextarea内で「ここから選択」行の次から「ここまで選択」行の直前までを選択します。</li>
+      <li>選択範囲を右クリックし、「選択範囲のタイムコード付きURLを正規化」を実行します。</li>
+      <li>3件変更の通知が出て、URLがそれぞれ <code>1032</code>、<code>1653</code>、<code>2765</code> になることを確認します。</li>
+      <li>先頭、選択境界、末尾の各行が変化していないことを確認します。</li>
+      <li>右クリックメニューの「直前の変更を元に戻す」で初期内容へ戻ることを確認します。</li>
+    </ol>
+    <textarea id="editorTest" class="editor-test" spellcheck="false">選択範囲外（先頭）: この行は変更しない
+--- ここから選択 ---
+通常形式 https://www.youtube.com/watch?v=qhH-azW3LJw&t=17m12s
+短縮形式 https://youtu.be/N3UkUjJ8UiY?t=27m33s
+Wiki構文 [[ライブ>>https://www.youtube.com/live/6mdcWcjeQcA?t=2765s]]
+--- ここまで選択 ---
+選択範囲外（末尾）: この行も変更しない</textarea>
+    <div class="editor-actions">
+      <button id="resetEditor" type="button">初期内容へ戻す</button>
+      <span>Undo確認後や、試験をやり直すときに使用します。</span>
+    </div>
+
+    <h2>contenteditableの保存対象確認</h2>
+    <ol>
+      <li>下の編集欄にあるURL部分を選択し、右クリックメニューから正規化します。</li>
+      <li>画面上のURLが <code>t=1032</code> へ変わり、inputイベント回数が1以上になることを確認します。</li>
+      <li>「内部状態を保存結果へ反映」を押し、保存結果にも <code>t=1032</code> が表示されることを確認します。</li>
+      <li>右クリックメニューの「直前の変更を元に戻す」で、画面と内部状態が変更前へ戻ることを確認します。</li>
+    </ol>
+    <div id="richEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true">発言元 https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=17m12s</div>
+    <div class="editor-actions">
+      <button id="saveRichEditor" type="button">内部状態を保存結果へ反映</button>
+      <button id="resetRichEditor" type="button">初期内容へ戻す</button>
+      <strong>inputイベント回数: <span id="inputEventCount">0</span></strong>
+    </div>
+    <p>イベントで更新された内部状態:</p>
+    <pre id="internalState" class="state-output"></pre>
+    <p>保存結果:</p>
+    <pre id="savedState" class="state-output">未保存</pre>
   </main>
   <script>
+    const editorTest = document.getElementById("editorTest");
+    const initialEditorText = editorTest.value;
+
+    document.getElementById("resetEditor").addEventListener("click", () => {
+      editorTest.value = initialEditorText;
+      editorTest.focus();
+      editorTest.setSelectionRange(0, 0);
+    });
+
+    const richEditor = document.getElementById("richEditor");
+    const initialRichEditorText = richEditor.textContent;
+    const internalState = document.getElementById("internalState");
+    const savedState = document.getElementById("savedState");
+    const inputEventCount = document.getElementById("inputEventCount");
+    let richEditorState = initialRichEditorText;
+    let richEditorInputCount = 0;
+
+    internalState.textContent = richEditorState;
+
+    richEditor.addEventListener("input", () => {
+      richEditorInputCount += 1;
+      richEditorState = richEditor.textContent;
+      inputEventCount.textContent = String(richEditorInputCount);
+      internalState.textContent = richEditorState;
+    });
+
+    document.getElementById("saveRichEditor").addEventListener("click", () => {
+      savedState.textContent = richEditorState;
+    });
+
+    document.getElementById("resetRichEditor").addEventListener("click", () => {
+      richEditor.textContent = initialRichEditorText;
+      richEditorState = initialRichEditorText;
+      richEditorInputCount = 0;
+      inputEventCount.textContent = "0";
+      internalState.textContent = richEditorState;
+      savedState.textContent = "未保存";
+      richEditor.focus();
+    });
+
     for (const input of document.querySelectorAll(".result-input")) {
       input.addEventListener("input", () => {
         const status = input.nextElementSibling;
