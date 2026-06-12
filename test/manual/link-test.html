@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube Timecode Normalizer - リンク単体テスト</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, sans-serif;
+      line-height: 1.6;
+    }
+
+    body {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1,
+    h2 {
+      line-height: 1.25;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-block: 16px 32px;
+    }
+
+    th,
+    td {
+      border: 1px solid #8888;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #8882;
+    }
+
+    td:first-child {
+      width: 2rem;
+      text-align: center;
+    }
+
+    a,
+    code {
+      overflow-wrap: anywhere;
+    }
+
+    .result-input {
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 240px;
+      padding: 7px 9px;
+      font: inherit;
+    }
+
+    .result-input.match {
+      border-color: #16833a;
+      outline: 2px solid #16833a44;
+    }
+
+    .result-input.mismatch {
+      border-color: #c33b32;
+      outline: 2px solid #c33b3244;
+    }
+
+    .result-status {
+      display: block;
+      min-height: 1.6em;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .result-status.match {
+      color: #16833a;
+    }
+
+    .result-status.mismatch {
+      color: #c33b32;
+    }
+
+    .note {
+      border-left: 4px solid #2878c8;
+      padding: 8px 12px;
+      background: #2878c812;
+    }
+
+    .selection-sample {
+      padding: 12px;
+      border: 1px solid #8888;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>リンク単体テスト</h1>
+    <p>
+      各リンクを右クリックし、「リンクをタイムコード正規化URLにしてコピー」と
+      「正規化したリンクを開く」を確認します。
+    </p>
+    <p class="note">
+      下表の期待値は初期設定（変換前形式を維持、si保持、feature除去、list非保持、
+      崩れた時刻を救済）を前提とします。
+    </p>
+
+    <h2>基本形式</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>済</th>
+          <th>ケース</th>
+          <th>右クリックするリンク</th>
+          <th>コピーされる期待値</th>
+          <th>実際のコピー結果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="checkbox" aria-label="通常形式を確認"></td>
+          <td>通常形式</td>
+          <td><a href="https://www.youtube.com/watch?v=qhH-azW3LJw&t=17m12s">watch / 17m12s</a></td>
+          <td><code>https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=1032</code></td>
+          <td><input class="result-input" aria-label="通常形式のコピー結果" data-expected="https://www.youtube.com/watch?v=qhH-azW3LJw&t=1032" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="短縮形式を確認"></td>
+          <td>短縮形式</td>
+          <td><a href="https://youtu.be/N3UkUjJ8UiY?t=27m33s">youtu.be / 27m33s</a></td>
+          <td><code>https://youtu.be/N3UkUjJ8UiY?t=1653</code></td>
+          <td><input class="result-input" aria-label="短縮形式のコピー結果" data-expected="https://youtu.be/N3UkUjJ8UiY?t=1653" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="ライブ形式を確認"></td>
+          <td>ライブアーカイブ</td>
+          <td><a href="https://www.youtube.com/live/6mdcWcjeQcA?t=2765s">live / 2765s</a></td>
+          <td><code>https://www.youtube.com/watch?v=6mdcWcjeQcA&amp;t=2765</code></td>
+          <td><input class="result-input" aria-label="ライブ形式のコピー結果" data-expected="https://www.youtube.com/watch?v=6mdcWcjeQcA&t=2765" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="ショート形式を確認"></td>
+          <td>Shorts</td>
+          <td><a href="https://www.youtube.com/shorts/qhH-azW3LJw?t=1m12s">shorts / 1m12s</a></td>
+          <td><code>https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=72</code></td>
+          <td><input class="result-input" aria-label="Shorts形式のコピー結果" data-expected="https://www.youtube.com/watch?v=qhH-azW3LJw&t=72" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="正規化済みを確認"></td>
+          <td>正規化済み</td>
+          <td><a href="https://www.youtube.com/watch?v=OjVYtizH0ks&t=10905">watch / 10905</a></td>
+          <td><code>https://www.youtube.com/watch?v=OjVYtizH0ks&amp;t=10905</code></td>
+          <td><input class="result-input" aria-label="正規化済みURLのコピー結果" data-expected="https://www.youtube.com/watch?v=OjVYtizH0ks&t=10905" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>パラメータと崩れた形式</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>済</th>
+          <th>ケース</th>
+          <th>右クリックするリンク</th>
+          <th>コピーされる期待値</th>
+          <th>実際のコピー結果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="checkbox" aria-label="si保持を確認"></td>
+          <td>si保持</td>
+          <td><a href="https://www.youtube.com/watch?v=qhH-azW3LJw&si=tracking&t=1m">si + 1m</a></td>
+          <td><code>https://www.youtube.com/watch?v=qhH-azW3LJw&amp;si=tracking&amp;t=60</code></td>
+          <td><input class="result-input" aria-label="si保持のコピー結果" data-expected="https://www.youtube.com/watch?v=qhH-azW3LJw&si=tracking&t=60" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="feature除去を確認"></td>
+          <td>feature除去</td>
+          <td><a href="https://www.youtube.com/watch?v=qhH-azW3LJw&feature=share&t=1m">feature + 1m</a></td>
+          <td><code>https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=60</code></td>
+          <td><input class="result-input" aria-label="feature除去のコピー結果" data-expected="https://www.youtube.com/watch?v=qhH-azW3LJw&t=60" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="通常プレイリストを確認"></td>
+          <td>通常list（初期設定では除去）</td>
+          <td><a href="https://youtu.be/xI28vMLu7XQ?list=PLMF8NocLqJtu0ZEvlLo5lbuqM9x4bUVH9&t=7332">企画プレイリスト</a></td>
+          <td><code>https://youtu.be/xI28vMLu7XQ?t=7332</code></td>
+          <td><input class="result-input" aria-label="通常プレイリストのコピー結果" data-expected="https://youtu.be/xI28vMLu7XQ?t=7332" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="個人プレイリストを確認"></td>
+          <td>個人用list（常に除去）</td>
+          <td><a href="https://www.youtube.com/watch?v=5vNh4QIR5Sc&list=LL&t=468s">list=LL</a></td>
+          <td><code>https://www.youtube.com/watch?v=5vNh4QIR5Sc&amp;t=468</code></td>
+          <td><input class="result-input" aria-label="個人用プレイリストのコピー結果" data-expected="https://www.youtube.com/watch?v=5vNh4QIR5Sc&t=468" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="崩れた短縮URLを確認"></td>
+          <td>崩れた時刻</td>
+          <td><a href="https://youtu.be/PWS1ftGoeb8&t=19m32s">youtu.be + &amp;t</a></td>
+          <td><code>https://youtu.be/PWS1ftGoeb8?t=1172</code></td>
+          <td><input class="result-input" aria-label="崩れた時刻のコピー結果" data-expected="https://youtu.be/PWS1ftGoeb8?t=1172" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>変更しないケース</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>済</th>
+          <th>ケース</th>
+          <th>右クリックするリンク</th>
+          <th>期待する動作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="checkbox" aria-label="タイムコードなしを確認"></td>
+          <td>タイムコードなし</td>
+          <td><a href="https://www.youtube.com/watch?v=qhH-azW3LJw">YouTube動画</a></td>
+          <td>変換対象外として通知される</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="未対応時刻を確認"></td>
+          <td>未対応の時刻</td>
+          <td><a href="https://www.youtube.com/watch?v=qhH-azW3LJw&t=abc">t=abc</a></td>
+          <td>変換対象外として通知される</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="YouTube以外を確認"></td>
+          <td>YouTube以外</td>
+          <td><a href="https://example.com/watch?v=qhH-azW3LJw&t=1m">example.com</a></td>
+          <td>変換対象外として通知される</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="動画以外を確認"></td>
+          <td>YouTubeの動画以外</td>
+          <td><a href="https://www.youtube.com/@hololive">チャンネルURL</a></td>
+          <td>変換対象外として通知される</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>popup抽出の確認</h2>
+    <p>
+      下の試験用テキストだけを選択してpopupを開きます。「選択範囲のみ」で5件抽出され、
+      4件が変換可能、1件が正規化済みと表示されることを確認してください。
+      次に「ページ全体」へ切り替え、上の表内のリンク先URLも抽出されることを確認します。
+    </p>
+    <pre class="selection-sample">通常形式 https://www.youtube.com/watch?v=qhH-azW3LJw&amp;t=17m12s
+短縮形式 https://youtu.be/N3UkUjJ8UiY?t=27m33s
+ライブ https://www.youtube.com/live/6mdcWcjeQcA?t=2765s
+Shorts https://www.youtube.com/shorts/qhH-azW3LJw?t=1m12s
+正規化済み https://www.youtube.com/watch?v=OjVYtizH0ks&amp;t=10905</pre>
+  </main>
+  <script>
+    for (const input of document.querySelectorAll(".result-input")) {
+      input.addEventListener("input", () => {
+        const status = input.nextElementSibling;
+        const value = input.value.trim();
+        const matched = value === input.dataset.expected;
+
+        input.classList.toggle("match", Boolean(value) && matched);
+        input.classList.toggle("mismatch", Boolean(value) && !matched);
+        status.className = `result-status${value ? matched ? " match" : " mismatch" : ""}`;
+        status.textContent = value ? matched ? "一致" : "不一致" : "";
+      });
+    }
+  </script>
+</body>
+</html>

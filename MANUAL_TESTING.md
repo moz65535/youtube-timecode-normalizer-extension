@@ -43,6 +43,16 @@ YouTube以外 https://example.com/watch?v=qhH-azW3LJw&t=1m
 重複1 https://youtu.be/N3UkUjJ8UiY?t=27m33s
 ```
 
+## リンク単体の試験ページ
+
+実際のリンク要素に対する右クリックメニューは、専用ページをローカル配信して確認します。
+
+```powershell
+npm run test:manual
+```
+
+表示された `http://127.0.0.1:4173/` をChromeまたはFirefoxで開きます。ページ内には基本形式、パラメータ付き、崩れた形式、変換対象外のリンクと、初期設定での期待値を掲載しています。テスト終了時はターミナルで `Ctrl+C` を押して停止します。
+
 ## インストールと初期状態
 
 ### Chrome・Chromium系
@@ -76,6 +86,7 @@ YouTube以外 https://example.com/watch?v=qhH-azW3LJw&t=1m
 
 ### リンク単体
 
+- [ ] `npm run test:manual`でリンク単体の試験ページを開ける
 - [ ] `17m12s`が`1032`へ変換されてコピーされる
 - [ ] 正規化済みURLもコピーできる
 - [ ] YouTube以外のリンクは変換されず、対象外の通知が出る
