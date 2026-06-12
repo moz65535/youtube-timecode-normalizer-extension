@@ -71,10 +71,21 @@ https://youtu.be/N3UkUjJ8UiY&t=27m33s
 
 ## インストール
 
+### Chrome・Chromium系
+
 1. Chromeで `chrome://extensions/` を開く
 2. 右上の「デベロッパー モード」を有効にする
 3. 「パッケージ化されていない拡張機能を読み込む」を押す
 4. `extension/` ディレクトリを選択する
+
+### Firefox
+
+1. リポジトリルートで `npm run build:firefox` を実行する
+2. Firefoxで `about:debugging#/runtime/this-firefox` を開く
+3. 「一時的なアドオンを読み込む」を押す
+4. `dist/firefox/manifest.json` を選択する
+
+Firefoxの一時的なアドオンは、Firefoxを再起動すると解除されます。
 
 ## 権限について
 
@@ -138,15 +149,17 @@ popupの「崩れた時刻指定を救済する」は初期ONです。`/live/VID
 
 popupの「変更前テキストをバックアップとしてローカルに保存する」を有効にすると、編集欄を書き換える直前に変更前の選択範囲全体を拡張機能のローカルストレージへ保存します。保存されるのは直近の1件で、次の変更時に上書きされます。popupには保存日時、ページ名、文字数が表示され、「バックアップをコピー」から必要なときだけクリップボードへ取り出せます。この設定は初期OFFです。
 
-ChromeおよびFirefoxのWebExtensions APIに対応しています。FirefoxではManifest V3の背景処理をイベントページとして読み込み、アドオンIDを使って設定を保存します。同期ストレージが利用できない環境ではローカルストレージへ保存します。
+ChromeおよびFirefoxのWebExtensions APIに対応しています。背景処理のmanifest仕様が異なるため、Chrome版はService Worker、Firefox版はイベントページを使用します。FirefoxではアドオンIDを使って設定を保存し、同期ストレージが利用できない環境ではローカルストレージへ保存します。
 
 ## リポジトリ構成
 
 - `extension/`: Chrome Manifest V3拡張機能本体
+- `extension/manifest.firefox.json`: Firefox版生成時に使用するmanifest
 - `MANUAL_TESTING.md`: ブラウザ上で行う手動テストチェックリスト
 - `test/normalizer.test.js`: VitestによるURL正規化のユニットテスト
 - `test/cases/real/`: 実WikiソースまたはHTML由来のテストケース
 - `tools/`: テストケース分析用スクリプト
+- `tools/build_firefox.js`: Firefox向け`dist/firefox/`生成スクリプト
 
 ## テスト
 

@@ -2,3 +2,4 @@ youtube-timecode-normalizer-extension/
 *.zip
 node_modules/
 coverage/
+dist/

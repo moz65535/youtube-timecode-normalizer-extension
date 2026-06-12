@@ -49,13 +49,16 @@ YouTube以外 https://example.com/watch?v=qhH-azW3LJw&t=1m
 ### Chrome・Chromium系
 
 - [ ] `chrome://extensions/`から`extension/`を読み込める
+- [ ] `background.scripts`に関するmanifest警告が表示されない
 - [ ] 拡張機能のアイコンが正しく表示される
 - [ ] 拡張機能のエラーページに例外が記録されていない
 - [ ] Webページ上の右クリックメニューに各コマンドが表示される
 
 ### Firefox
 
-- [ ] `about:debugging#/runtime/this-firefox`から`manifest.json`を読み込める
+- [ ] `npm run build:firefox`で`dist/firefox/`を生成できる
+- [ ] `about:debugging#/runtime/this-firefox`から`dist/firefox/manifest.json`を読み込める
+- [ ] `background.service_worker`に関するmanifest警告が表示されない
 - [ ] 同じ固定IDの拡張機能が二重に登録されていない
 - [ ] popupの初期設定がすべてOFFにならず、既定値どおり表示される
 - [ ] 設定を変更し、popupを開き直しても保持される
@@ -174,6 +177,6 @@ YouTube以外 https://example.com/watch?v=qhH-azW3LJw&t=1m
 - [ ] 必要に応じて`npm run test:problems`
 - [ ] Chromeで短時間スモークテスト
 - [ ] Firefoxで短時間スモークテスト
-- [ ] `manifest.json`と`package.json`のバージョンが一致する
+- [ ] Chrome用・Firefox用manifestと`package.json`のバージョンが一致する
 - [ ] READMEと実際のUI文言が一致する
 - [ ] Gitのワークツリーが意図した状態になっている
