@@ -21,14 +21,20 @@ if (result.status !== 0) {
   process.exit(result.status || 1);
 }
 
-let actual;
+let report;
 try {
-  actual = JSON.parse(result.stdout).totals;
+  report = JSON.parse(result.stdout);
 } catch (_error) {
   process.stderr.write("実データ集計のJSONを解析できませんでした。\n");
   process.exit(1);
 }
 
+if (report.skipped) {
+  console.log("SKIP real-data baseline (set REAL_TEST_DATA_DIR to enable)");
+  process.exit(0);
+}
+
+const actual = report.totals;
 const differences = Object.entries(expected)
   .filter(([key, value]) => actual[key] !== value)
   .map(([key, value]) => `${key}: expected ${value}, actual ${actual[key]}`);

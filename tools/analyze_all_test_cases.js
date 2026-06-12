@@ -1,11 +1,22 @@
 const fs = require("fs");
 const path = require("path");
+const { resolveRealDataDir } = require("./real_data_path.js");
 
 require(path.resolve("extension/normalizer.js"));
 
 const args = process.argv.slice(2);
 const mode = args.includes("--problems") ? "problems" : args.includes("--summary") ? "summary" : "full";
-const targetDir = args.find((arg) => !arg.startsWith("--")) || "test/cases/real";
+const explicitTargetDir = args.find((arg) => !arg.startsWith("--"));
+const resolvedTarget = resolveRealDataDir(explicitTargetDir);
+if (!resolvedTarget.path) {
+  console.log(JSON.stringify({
+    skipped: true,
+    reason: "real test data not found",
+    searched: resolvedTarget.candidates
+  }, null, 2));
+  process.exit(0);
+}
+const targetDir = resolvedTarget.path;
 const options = { formatMode: "www", removeSi: true, removeSiWithoutTime: false, removeFeature: true, preserveList: false };
 
 function walk(dir) {

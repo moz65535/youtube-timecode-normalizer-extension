@@ -3,3 +3,4 @@ youtube-timecode-normalizer-extension/
 node_modules/
 coverage/
 dist/
+test/cases/real/

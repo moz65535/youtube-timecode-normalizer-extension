@@ -1,9 +1,15 @@
 const fs = require("fs");
 const path = require("path");
+const { resolveRealDataDir } = require("./real_data_path.js");
 
 require(path.resolve("extension/normalizer.js"));
 
-const targetDir = process.argv[2] || "test/cases/real";
+const resolvedTarget = resolveRealDataDir(process.argv[2]);
+if (!resolvedTarget.path) {
+  console.log("[]");
+  process.exit(0);
+}
+const targetDir = resolvedTarget.path;
 const reasons = new Set((process.argv[3] || "unsupported-timecode,not-video-url").split(","));
 
 function walk(dir) {
