@@ -40,6 +40,12 @@
     elements.status.textContent = message;
   }
 
+  function resultSummary(results, verb) {
+    const changed = results.filter((item) => item.changed).length;
+    const alreadyNormalized = results.filter((item) => item.reason === "already-normalized").length;
+    return `${results.length}件${verb}、${changed}件を変換可能、正規化済み${alreadyNormalized}件です。`;
+  }
+
   async function getActiveTab() {
     const [tab] = await extensionApi.tabs.query({ active: true, currentWindow: true });
     return tab;
@@ -273,6 +279,7 @@
 
   function renderDiff(container, results) {
     const items = changedResults(results);
+    elements.copyDiff.disabled = items.length === 0;
     container.textContent = "";
     if (!items.length) {
       const empty = document.createElement("p");
@@ -391,11 +398,10 @@
       renderList(elements.results, currentResults, false);
       renderDiff(elements.diff, currentResults);
       renderList(elements.suspicious, currentResults, true);
-      const convertible = currentResults.filter((item) => item.changed || item.reason === "already-normalized").length;
       if (response.scope === "selection" && !response.selectionText) {
         status("選択範囲がありません。抽出対象をページ全体に切り替えることもできます。");
       } else {
-        status(`${currentResults.length}件抽出、${convertible}件が正規化対象です。`);
+        status(resultSummary(currentResults, "抽出"));
       }
     } catch (_error) {
       status("このページでは抽出できないか、読み込み中です。再度抽出するか、入力欄のプレビューを使ってください。");
@@ -414,8 +420,7 @@
     renderList(elements.results, currentResults, false);
     renderDiff(elements.diff, currentResults);
     renderList(elements.suspicious, currentResults, true);
-    const changed = currentResults.filter((item) => item.changed).length;
-    status(`${currentResults.length}件検出、${changed}件を変換できます。`);
+    status(resultSummary(currentResults, "検出"));
   }
 
   function rerenderCurrentResults() {

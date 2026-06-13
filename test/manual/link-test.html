@@ -176,6 +176,14 @@
       崩れた時刻を救済）を前提とします。
     </p>
 
+    <h2>クリップボード確認用</h2>
+    <p>コピー内容を一時的に確認するための汎用欄です。試験結果には影響しません。</p>
+    <textarea id="clipboardScratchpad" class="count-check" placeholder="ここへ貼り付け"></textarea>
+    <div class="editor-actions">
+      <button id="clearScratchpad" type="button">クリア</button>
+      <strong id="scratchpadStats">0文字 / 0行</strong>
+    </div>
+
     <h2>基本形式</h2>
     <table>
       <thead>
@@ -341,7 +349,7 @@ URL不正 https://%</pre>
         <tr><th>済</th><th>確認箇所</th><th>期待値</th></tr>
       </thead>
       <tbody>
-        <tr><td><input type="checkbox" aria-label="抽出件数を確認"></td><td>ステータス</td><td>11件抽出、6件が正規化対象</td></tr>
+        <tr><td><input type="checkbox" aria-label="抽出件数を確認"></td><td>ステータス</td><td>11件抽出、5件を変換可能、正規化済み1件</td></tr>
         <tr><td><input type="checkbox" aria-label="差分件数を確認"></td><td>変更差分</td><td>5件</td></tr>
         <tr><td><input type="checkbox" aria-label="疑わしい件数を確認"></td><td>疑わしい対象外</td><td>9件</td></tr>
         <tr><td><input type="checkbox" aria-label="文脈表示を確認"></td><td>文脈</td><td>各項目にケース名と対象URLマーカーが表示される</td></tr>
@@ -410,8 +418,8 @@ URL不正 https://%</pre>
 
     <h3>設定切替の確認</h3>
     <ul>
-      <li><label><input type="checkbox">「崩れた時刻指定を救済する」をOFFにすると、正規化対象が5件になり、「崩れた時刻指定」が1件表示される</label></li>
-      <li><label><input type="checkbox">初期設定へ戻して「タイムコードなしのsiも除去する」をONにすると、正規化対象が7件になり、「si除去」が1件表示される</label></li>
+      <li><label><input type="checkbox">「崩れた時刻指定を救済する」をOFFにすると、変換可能が4件、正規化済みが1件になり、「崩れた時刻指定」が1件表示される</label></li>
+      <li><label><input type="checkbox">初期設定へ戻して「タイムコードなしのsiも除去する」をONにすると、変換可能が6件、正規化済みが1件になり、「si除去」が1件表示される</label></li>
       <li><label><input type="checkbox">「listパラメータ付きURLを疑わしい対象として表示する」をOFFにすると、疑わしい対象外が8件になる</label></li>
       <li><label><input type="checkbox">手動入力欄へ試験用テキストを貼り、11件検出、5件を変換できると表示される</label></li>
       <li><label><input type="checkbox">手動プレビューの変換後テキストと変更差分をコピーできる</label></li>
@@ -487,6 +495,21 @@ Wiki構文 [[ライブ>>https://www.youtube.com/live/6mdcWcjeQcA?t=2765s]]
   <script>
     const editorTest = document.getElementById("editorTest");
     const initialEditorText = editorTest.value;
+    const clipboardScratchpad = document.getElementById("clipboardScratchpad");
+    const scratchpadStats = document.getElementById("scratchpadStats");
+
+    function updateScratchpadStats() {
+      const text = clipboardScratchpad.value;
+      const lines = text ? text.split(/\r?\n/).length : 0;
+      scratchpadStats.textContent = `${text.length}文字 / ${lines}行`;
+    }
+
+    clipboardScratchpad.addEventListener("input", updateScratchpadStats);
+    document.getElementById("clearScratchpad").addEventListener("click", () => {
+      clipboardScratchpad.value = "";
+      updateScratchpadStats();
+      clipboardScratchpad.focus();
+    });
 
     document.getElementById("resetEditor").addEventListener("click", () => {
       editorTest.value = initialEditorText;

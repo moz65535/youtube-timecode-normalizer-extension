@@ -11,6 +11,7 @@
     "test:smoke": "vitest run --reporter=dot && node tools/check_real_data_baseline.js",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "pretest:manual": "npm run build:firefox",
     "test:manual": "node tools/serve_manual_test.js",
     "test:real": "node tools/analyze_all_test_cases.js --summary",
     "test:problems": "node tools/analyze_all_test_cases.js --problems"
