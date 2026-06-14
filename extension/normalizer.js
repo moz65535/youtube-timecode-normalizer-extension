@@ -23,7 +23,7 @@
   );
   const URL_CONTINUATION_CHAR = /[A-Za-z0-9._~/?#@!$&*+,;=%-]/;
   const VIDEO_ID_PATTERN = "[A-Za-z0-9_-]{11}";
-  const TRAILING_PUNCTUATION = /[.,;:!?、。）」』】\]\)]+$/u;
+  const TRAILING_PUNCTUATION = /[.,;:!?、。）」』】\]\(\)~]+$/u;
 
   function trimCandidate(candidate) {
     return candidate.replace(TRAILING_PUNCTUATION, "");

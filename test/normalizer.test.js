@@ -67,6 +67,16 @@ describe("text normalization", () => {
       name: "keeps trailing wiki brackets outside URLs",
       input: "[[動画>>https://youtu.be/qhH-azW3LJw?t=17m12s]]",
       expected: "[[動画>>https://www.youtube.com/watch?v=qhH-azW3LJw&t=1032]]"
+    },
+    {
+      name: "keeps trailing wiki parentheses outside live URLs",
+      input: "https://www.youtube.com/live/sPixWMcu9Vo?t=1860))(((",
+      expected: "https://www.youtube.com/watch?v=sPixWMcu9Vo&t=1860))((("
+    },
+    {
+      name: "keeps trailing wiki strike markup outside live URLs",
+      input: "https://www.youtube.com/live/5T1Fu7s5hOc?t=8m30s))~~",
+      expected: "https://www.youtube.com/watch?v=5T1Fu7s5hOc&t=510))~~"
     }
   ])("$name", ({ input, expected }) => {
     expect(normalizeText(input)).toBe(expected);
