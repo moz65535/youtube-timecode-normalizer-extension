@@ -36,6 +36,8 @@
   let currentResults = [];
   let currentConvertedText = "";
   let currentSource = "page";
+  let refreshSequence = 0;
+  let settingsWriteQueue = Promise.resolve();
 
   function status(message) {
     elements.status.textContent = message;
@@ -82,6 +84,13 @@
     }
   }
 
+  function queueStoredOptions(options) {
+    settingsWriteQueue = settingsWriteQueue
+      .catch(() => {})
+      .then(() => setStoredOptions(options));
+    return settingsWriteQueue;
+  }
+
   function applyOptions(options) {
     elements.formatMode.value = options.formatMode;
     elements.removeSi.checked = Boolean(options.removeSi);
@@ -100,7 +109,7 @@
 
   async function resetSettings() {
     const defaults = { ...YTNormalizer.DEFAULT_OPTIONS };
-    await setStoredOptions(defaults);
+    await queueStoredOptions(defaults);
     applyOptions(defaults);
     for (const input of document.querySelectorAll(".filters input[type='checkbox']")) {
       input.checked = true;
@@ -156,7 +165,7 @@
   }
 
   async function saveSettings(event) {
-    await setStoredOptions(currentOptions());
+    await queueStoredOptions(currentOptions());
     const settingId = event && event.target ? event.target.id : "";
 
     if (settingId === "copyBackupBeforeEdit") {
@@ -441,9 +450,11 @@
   }
 
   async function refreshLinks() {
+    const requestSequence = ++refreshSequence;
     try {
       const tab = await getActiveTab();
       if (!tab || !tab.id) {
+        if (requestSequence !== refreshSequence) return;
         status("アクティブなタブを取得できません。");
         return;
       }
@@ -453,6 +464,7 @@
         options: currentOptions()
       });
 
+      if (requestSequence !== refreshSequence) return;
       currentSource = "page";
       currentResults = response.results || [];
       renderList(elements.results, currentResults, false);
@@ -464,6 +476,7 @@
         status(resultSummary(currentResults, "抽出"));
       }
     } catch (_error) {
+      if (requestSequence !== refreshSequence) return;
       status("このページでは抽出できないか、読み込み中です。再度抽出するか、入力欄のプレビューを使ってください。");
       currentResults = [];
       renderList(elements.results, [], false);
@@ -473,6 +486,7 @@
   }
 
   function previewManualText() {
+    refreshSequence += 1;
     const result = YTNormalizer.normalizeText(elements.manualInput.value, currentOptions());
     currentConvertedText = result.text;
     currentSource = "manual";

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const chromeManifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
 const firefoxManifest = JSON.parse(fs.readFileSync("extension/manifest.firefox.json", "utf8"));
+const packageMetadata = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
 describe("browser manifests", () => {
   it("uses only a service worker in the Chrome manifest", () => {
@@ -35,5 +36,10 @@ describe("browser manifests", () => {
     ]) {
       expect(firefoxManifest[key]).toEqual(chromeManifest[key]);
     }
+  });
+
+  it("keeps package and manifest versions aligned", () => {
+    expect(chromeManifest.version).toBe(packageMetadata.version);
+    expect(firefoxManifest.version).toBe(packageMetadata.version);
   });
 });

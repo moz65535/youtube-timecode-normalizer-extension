@@ -1,3 +1,16 @@
-# YouTube Timecode Normalizer Extension
+# YouTube Timecode Normalizer 0.1.0
 
-拡張機能の使い方、対象URL、テスト方法はリポジトリルートの `README.md` を参照してください。
+YouTube動画URLのタイムコード表記を、整数秒の `t=秒数` へ正規化するブラウザ拡張機能です。
+
+## 基本的な使い方
+
+- リンクを右クリックして、正規化URLをコピーまたは新しいタブで開く
+- Wikiなどの編集欄で範囲を選択し、右クリックメニューから一括正規化する
+- popupで変更差分や疑わしいURLを確認する
+
+試験公開版のため、一括変更後は保存前に差分とプレビューを確認してください。
+
+この拡張機能はページ内容を外部へ送信しません。設定と直近1件の編集前バックアップのみ、ブラウザ拡張機能のストレージへ保存します。
+
+ソースコードと詳しい説明:
+https://github.com/moz65535/youtube-timecode-normalizer-extension

@@ -211,5 +211,8 @@ popup試験用の選択範囲には、主要カテゴリを網羅する11件のU
 - [ ] Chromeで短時間スモークテスト
 - [ ] Firefoxで短時間スモークテスト
 - [ ] Chrome用・Firefox用manifestと`package.json`のバージョンが一致する
+- [ ] `npm run build:release`でChrome用・Firefox用ZIPと`SHA256SUMS.txt`を生成できる
+- [ ] 各ZIPの直下に正しい`manifest.json`があり、開発用ファイルや実データが含まれていない
+- [ ] `PRIVACY.md`、`CHANGELOG.md`、ストア掲載文が現在の仕様と一致する
 - [ ] READMEと実際のUI文言が一致する
 - [ ] Gitのワークツリーが意図した状態になっている
