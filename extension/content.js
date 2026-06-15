@@ -4,6 +4,8 @@
   const extensionApi = globalThis.browser || globalThis.chrome;
   const BACKUP_STORAGE_KEY = "lastTextBackup";
   let lastUndo = null;
+  let lastLinkCollection = null;
+  let linkCollectionSequence = 0;
 
   function showToast(message) {
     const previous = document.getElementById("yt-timecode-normalizer-toast");
@@ -160,13 +162,21 @@
     return { changed: false, count: 0 };
   }
 
-  function getSelectedText() {
+  function getSelectionSource() {
     const active = document.activeElement;
     if (active && (active.tagName === "TEXTAREA" || (active.tagName === "INPUT" && active.type === "text"))) {
-      return active.value.slice(active.selectionStart, active.selectionEnd);
+      return {
+        text: active.value.slice(active.selectionStart, active.selectionEnd),
+        element: active,
+        start: active.selectionStart
+      };
     }
 
-    return window.getSelection() ? window.getSelection().toString() : "";
+    return {
+      text: window.getSelection() ? window.getSelection().toString() : "",
+      element: null,
+      start: 0
+    };
   }
 
   function linksWithContext(text) {
@@ -254,11 +264,26 @@
 
   function collectPageLinks(options) {
     const scope = options && options.extractionScope === "page" ? "page" : "selection";
-    const selection = getSelectedText();
-    const selectionLinks = linksWithContext(selection);
+    const selectionSource = getSelectionSource();
+    const selection = selectionSource.text;
+    const collectionId = ++linkCollectionSequence;
+    lastLinkCollection = selectionSource.element
+      ? { id: collectionId, element: selectionSource.element }
+      : null;
+    const selectionLinks = linksWithContext(selection).map((link) => ({
+      ...link,
+      jumpTarget: selectionSource.element
+        ? {
+            collectionId,
+            start: selectionSource.start + link.index,
+            end: selectionSource.start + link.index + link.original.length
+          }
+        : null
+    }));
     let links = selectionLinks;
 
     if (scope === "page") {
+      lastLinkCollection = null;
       const byOriginal = new Map();
       const sources = [
         linksWithContext(document.body ? document.body.textContent : ""),
@@ -277,6 +302,7 @@
       index: link.index,
       contextBefore: link.contextBefore || "",
       contextAfter: link.contextAfter || "",
+      jumpTarget: link.jumpTarget || null,
       ...YTNormalizer.normalizeUrl(link.original, options)
     }));
 
@@ -286,6 +312,26 @@
       selectionText: selection,
       results
     };
+  }
+
+  function jumpToCollectedLink(target, original) {
+    if (!target || !lastLinkCollection || target.collectionId !== lastLinkCollection.id) {
+      return { jumped: false, error: "stale-collection" };
+    }
+
+    const element = lastLinkCollection.element;
+    if (!element || !element.isConnected || typeof element.setSelectionRange !== "function") {
+      return { jumped: false, error: "target-unavailable" };
+    }
+
+    if (element.value.slice(target.start, target.end) !== original) {
+      return { jumped: false, error: "text-changed" };
+    }
+
+    element.focus({ preventScroll: true });
+    element.setSelectionRange(target.start, target.end);
+    element.scrollIntoView({ block: "center", inline: "nearest" });
+    return { jumped: true };
   }
 
   extensionApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -304,6 +350,11 @@
 
     if (message.type === "yt-normalizer-collect-links") {
       sendResponse(collectPageLinks(message.options));
+      return false;
+    }
+
+    if (message.type === "yt-normalizer-jump-to-link") {
+      sendResponse(jumpToCollectedLink(message.target, message.original));
       return false;
     }
 

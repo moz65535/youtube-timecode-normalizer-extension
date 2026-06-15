@@ -290,6 +290,36 @@
     return contextNode;
   }
 
+  async function jumpToLink(item, button) {
+    const showJumpError = (message) => {
+      status(message);
+      button.textContent = "再抽出してください";
+      button.disabled = true;
+    };
+
+    try {
+      const tab = await getActiveTab();
+      if (!tab || !tab.id) {
+        showJumpError("編集画面を取得できません。");
+        return;
+      }
+
+      const response = await extensionApi.tabs.sendMessage(tab.id, {
+        type: "yt-normalizer-jump-to-link",
+        target: item.jumpTarget,
+        original: item.original
+      });
+      if (response && response.jumped) {
+        window.close();
+        return;
+      }
+
+      showJumpError("編集内容が変わったため移動できません。もう一度抽出してください。");
+    } catch (_error) {
+      showJumpError("該当位置へ移動できません。もう一度抽出してください。");
+    }
+  }
+
   function diffText(results) {
     return changedResults(results)
       .map((item) => {
@@ -379,6 +409,14 @@
         malformedBadge.className = "badge warn";
         malformedBadge.textContent = "崩れ時刻";
         meta.appendChild(malformedBadge);
+      }
+      if (includeOnlySuspicious && item.jumpTarget) {
+        const jumpButton = document.createElement("button");
+        jumpButton.type = "button";
+        jumpButton.className = "jump-button";
+        jumpButton.textContent = "位置へ移動";
+        jumpButton.addEventListener("click", () => jumpToLink(item, jumpButton));
+        meta.appendChild(jumpButton);
       }
 
       const original = document.createElement("div");

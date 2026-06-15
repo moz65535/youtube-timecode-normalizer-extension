@@ -216,9 +216,18 @@ button:disabled:hover {
 
 .meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   color: var(--muted);
+  font-size: 12px;
+}
+
+.jump-button {
+  min-height: 24px;
+  margin-left: auto;
+  padding: 2px 7px;
+  color: var(--accent);
   font-size: 12px;
 }
 

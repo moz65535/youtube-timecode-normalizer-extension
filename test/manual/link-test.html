@@ -436,6 +436,24 @@ URL不正 https://%</pre>
       <strong class="line-status"></strong>
     </p>
 
+    <h3>疑わしいURLの位置へ移動</h3>
+    <ol>
+      <li>「移動試験範囲を選択」を押し、popupで選択範囲のみを抽出します。</li>
+      <li>疑わしい対象外に同じURLが2件表示され、それぞれに「位置へ移動」があることを確認します。</li>
+      <li>文脈が「2件目」の項目で「位置へ移動」を押します。</li>
+      <li>popupが閉じ、下のtextarea内にある2件目のURLだけが選択されることを確認します。</li>
+      <li>「5秒後に文字を変更」を押してから、5秒以内に試験範囲を選択し、popupで抽出します。</li>
+      <li>文字が自動変更された後に「位置へ移動」を押し、そのボタンが「再抽出してください」に変わることを確認します。</li>
+    </ol>
+    <div class="editor-actions">
+      <button id="selectJumpSample" type="button">移動試験範囲を選択</button>
+      <button id="scheduleJumpMutation" type="button">5秒後に文字を変更</button>
+      <strong id="jumpSelectionStatus" aria-live="polite"></strong>
+    </div>
+    <textarea id="jumpSample" class="count-check" spellcheck="false">1件目 https://www.youtube.com/watch?v=qhH-azW3LJw&t=abc
+間の行
+2件目 https://www.youtube.com/watch?v=qhH-azW3LJw&t=abc</textarea>
+
     <h3>設定切替の確認</h3>
     <ul>
       <li><label><input type="checkbox">「崩れた時刻指定を救済する」をOFFにすると、変換可能が4件、正規化済みが1件になり、「崩れた時刻指定」が1件表示される</label></li>
@@ -674,6 +692,23 @@ Wiki構文 [[ライブ>>https://www.youtube.com/live/6mdcWcjeQcA?t=2765s]]
       selection.removeAllRanges();
       selection.addRange(range);
       document.getElementById("timedSiSelectionStatus").textContent = "si試験範囲を選択しました。popupを開いてください。";
+    });
+
+    document.getElementById("selectJumpSample").addEventListener("click", () => {
+      const jumpSample = document.getElementById("jumpSample");
+      jumpSample.focus();
+      jumpSample.select();
+      document.getElementById("jumpSelectionStatus").textContent = "移動試験範囲を選択しました。popupを開いてください。";
+    });
+
+    document.getElementById("scheduleJumpMutation").addEventListener("click", () => {
+      const jumpSample = document.getElementById("jumpSample");
+      const status = document.getElementById("jumpSelectionStatus");
+      status.textContent = "5秒後にtextareaの先頭へ文字を追加します。";
+      window.setTimeout(() => {
+        jumpSample.value = `変更済み\n${jumpSample.value}`;
+        status.textContent = "textareaを変更しました。popupの古い抽出結果から移動してください。";
+      }, 5000);
     });
 
     for (const button of document.querySelectorAll(".select-sample")) {
