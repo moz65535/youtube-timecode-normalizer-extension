@@ -5,6 +5,7 @@
   const BACKUP_STORAGE_KEY = "lastTextBackup";
   const elements = {
     formatMode: document.getElementById("formatMode"),
+    resetSettings: document.getElementById("resetSettings"),
     removeSi: document.getElementById("removeSi"),
     removeSiWithoutTime: document.getElementById("removeSiWithoutTime"),
     removeFeature: document.getElementById("removeFeature"),
@@ -81,17 +82,36 @@
     }
   }
 
+  function applyOptions(options) {
+    elements.formatMode.value = options.formatMode;
+    elements.removeSi.checked = Boolean(options.removeSi);
+    elements.removeSiWithoutTime.checked = Boolean(options.removeSiWithoutTime);
+    elements.removeFeature.checked = options.removeFeature !== false;
+    elements.copyBackupBeforeEdit.checked = Boolean(options.copyBackupBeforeEdit);
+    elements.extractionScope.value = options.extractionScope || "selection";
+    elements.preserveList.checked = Boolean(options.preserveList);
+    elements.flagListUrls.checked = options.flagListUrls !== false;
+    elements.repairMalformedTime.checked = options.repairMalformedTime !== false;
+  }
+
   async function loadSettings() {
-    const stored = await getStoredOptions();
-    elements.formatMode.value = stored.formatMode;
-    elements.removeSi.checked = Boolean(stored.removeSi);
-    elements.removeSiWithoutTime.checked = Boolean(stored.removeSiWithoutTime);
-    elements.removeFeature.checked = stored.removeFeature !== false;
-    elements.copyBackupBeforeEdit.checked = Boolean(stored.copyBackupBeforeEdit);
-    elements.extractionScope.value = stored.extractionScope || "selection";
-    elements.preserveList.checked = Boolean(stored.preserveList);
-    elements.flagListUrls.checked = stored.flagListUrls !== false;
-    elements.repairMalformedTime.checked = stored.repairMalformedTime !== false;
+    applyOptions(await getStoredOptions());
+  }
+
+  async function resetSettings() {
+    const defaults = { ...YTNormalizer.DEFAULT_OPTIONS };
+    await setStoredOptions(defaults);
+    applyOptions(defaults);
+    for (const input of document.querySelectorAll(".filters input[type='checkbox']")) {
+      input.checked = true;
+    }
+
+    if (currentSource === "manual") {
+      previewManualText();
+    } else {
+      await refreshLinks();
+    }
+    status("初期設定に戻しました。");
   }
 
   function formatBackupDate(savedAt) {
@@ -168,6 +188,7 @@
       "not-video-url": "動画URL以外",
       "unsupported-timecode": "未対応の時刻",
       "malformed-timecode": "崩れた時刻指定",
+      "mistyped-youtube-host": "ホスト名誤り",
       "not-youtube": "YouTube以外",
       "invalid-url": "URL不正"
     };
@@ -206,6 +227,7 @@
       "unsupported-timecode",
       "not-video-url",
       "no-timecode",
+      "mistyped-youtube-host",
       "not-youtube",
       "invalid-url"
     ]);
@@ -352,7 +374,7 @@
         listBadge.textContent = "list付き";
         meta.appendChild(listBadge);
       }
-      if (item.hasMalformedTime) {
+      if (item.hasMalformedTime && item.reason !== "malformed-timecode") {
         const malformedBadge = document.createElement("span");
         malformedBadge.className = "badge warn";
         malformedBadge.textContent = "崩れ時刻";
@@ -446,6 +468,7 @@
   }
 
   elements.formatMode.addEventListener("change", saveSettings);
+  elements.resetSettings.addEventListener("click", resetSettings);
   elements.removeSi.addEventListener("change", saveSettings);
   elements.removeSiWithoutTime.addEventListener("change", saveSettings);
   elements.removeFeature.addEventListener("change", saveSettings);
@@ -503,7 +526,7 @@
   });
   elements.copySuspiciousLinks.addEventListener("click", () => {
     const text = filteredSuspiciousResults(currentResults)
-      .map((item) => `${item.hasMalformedTime ? "崩れ時刻/" : ""}${item.hasList ? "list付き/" : ""}${reasonLabel(item.reason)}\t${item.original}`)
+      .map((item) => `${item.hasMalformedTime && item.reason !== "malformed-timecode" ? "崩れ時刻/" : ""}${item.hasList ? "list付き/" : ""}${reasonLabel(item.reason)}\t${item.original}`)
       .join("\n");
     copyText(text, "表示中の疑わしい対象外をコピーしました。");
   });

@@ -13,6 +13,10 @@
       </header>
 
       <section class="panel">
+        <div class="toolbar">
+          <h2>設定</h2>
+          <button id="resetSettings" type="button">初期設定に戻す</button>
+        </div>
         <label for="formatMode">変換形式</label>
         <select id="formatMode">
           <option value="preserve">変換前の形式に合わせる</option>
@@ -89,6 +93,7 @@
           <label><input type="checkbox" value="not-youtube" checked>YouTube以外</label>
           <label><input type="checkbox" value="unsupported-timecode" checked>未対応の時刻</label>
           <label><input type="checkbox" value="malformed-timecode" checked>崩れた時刻指定</label>
+          <label><input type="checkbox" value="mistyped-youtube-host" checked>ホスト名誤り</label>
           <label><input type="checkbox" value="invalid-url" checked>URL不正</label>
         </fieldset>
         <div id="results" class="results"></div>
@@ -114,6 +119,7 @@
           <label><input type="checkbox" value="unsupported-timecode" checked>未対応の時刻</label>
           <label><input type="checkbox" value="not-video-url" checked>動画URL以外</label>
           <label><input type="checkbox" value="no-timecode" checked>タイムコードなし</label>
+          <label><input type="checkbox" value="mistyped-youtube-host" checked>ホスト名誤り</label>
           <label><input type="checkbox" value="not-youtube" checked>YouTube以外</label>
           <label><input type="checkbox" value="invalid-url" checked>URL不正</label>
           <label><input type="checkbox" value="other" checked>その他</label>

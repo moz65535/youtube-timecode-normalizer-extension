@@ -18,7 +18,7 @@
 
   const URL_SAFE_CHARS = "A-Za-z0-9\\-._~:/?#@!$&()*+,;=%";
   const URL_PATTERN = new RegExp(
-    `(?:https?:\\/\\/[${URL_SAFE_CHARS}]+|(?:www\\.|m\\.)?youtube\\.com\\/[${URL_SAFE_CHARS}]+|youtu\\.be\\/[${URL_SAFE_CHARS}]+)`,
+    `(?:https?:\\/\\/[${URL_SAFE_CHARS}]+|(?:www\\.|m\\.)?youtube\\.com\\/[${URL_SAFE_CHARS}]+|(?:www\\.)?youtu\\.be\\/[${URL_SAFE_CHARS}]+)`,
     "gi"
   );
   const URL_CONTINUATION_CHAR = /[A-Za-z0-9._~/?#@!$&*+,;=%-]/;
@@ -36,6 +36,10 @@
   function isYoutubeHost(hostname) {
     const host = hostname.toLowerCase();
     return host === "youtube.com" || host === "www.youtube.com" || host === "m.youtube.com" || host === "youtu.be";
+  }
+
+  function isMistypedYoutubeHost(hostname) {
+    return hostname.toLowerCase() === "www.youtu.be";
   }
 
   function isShortHost(hostname) {
@@ -66,6 +70,7 @@
     if (!value) return null;
     const decoded = String(value).trim().toLowerCase();
     if (/^\d+$/.test(decoded)) return Number(decoded);
+    if (/^\d+\.\d+s?$/.test(decoded)) return Math.floor(Number(decoded.replace(/s$/, "")));
 
     const clock = decoded.match(/^(?:(\d+):)?(\d{1,2}):(\d{2})$/);
     if (clock) {
@@ -81,6 +86,22 @@
     }
 
     return null;
+  }
+
+  function parseReorderedUnitSeconds(value) {
+    const decoded = String(value || "").trim().toLowerCase();
+    const tokens = Array.from(decoded.matchAll(/(\d+)([hms])/g));
+    if (!tokens.length || tokens.map((match) => match[0]).join("") !== decoded) return null;
+
+    const values = { h: 0, m: 0, s: 0 };
+    const seen = new Set();
+    for (const match of tokens) {
+      const unit = match[2];
+      if (seen.has(unit)) return null;
+      seen.add(unit);
+      values[unit] = Number(match[1]);
+    }
+    return values.h * 3600 + values.m * 60 + values.s;
   }
 
   function getRawTimeValue(raw, url, options) {
@@ -189,6 +210,15 @@
       return { changed: false, normalized: raw, reason: "invalid-url" };
     }
 
+    if (isMistypedYoutubeHost(url.hostname)) {
+      return {
+        changed: false,
+        normalized: candidate,
+        reason: "mistyped-youtube-host",
+        suspicious: true
+      };
+    }
+
     if (!isYoutubeHost(url.hostname)) {
       return { changed: false, normalized: candidate, reason: "not-youtube" };
     }
@@ -232,7 +262,24 @@
       };
     }
 
-    const seconds = parseSeconds(time.value);
+    let seconds = parseSeconds(time.value);
+    if (seconds === null) {
+      const reorderedSeconds = parseReorderedUnitSeconds(time.value);
+      if (reorderedSeconds !== null) {
+        if (!options.repairMalformedTime) {
+          return {
+            changed: false,
+            normalized: candidate,
+            reason: "malformed-timecode",
+            suspicious: true,
+            hasList,
+            hasMalformedTime: true
+          };
+        }
+        seconds = reorderedSeconds;
+        time.malformed = true;
+      }
+    }
     if (seconds === null || Number.isNaN(seconds)) {
       return { changed: false, normalized: candidate, reason: "unsupported-timecode", suspicious: true, hasList };
     }
@@ -266,20 +313,24 @@
     const options = toOptions(optionsOrMode);
     const links = extractLinks(text);
     const sourceText = String(text || "");
-    let output = String(text || "");
     const results = [];
+    const outputParts = [];
+    let outputCursor = 0;
 
-    for (let index = links.length - 1; index >= 0; index -= 1) {
-      const link = links[index];
+    for (const link of links) {
       const result = normalizeUrl(link.original, options);
       const contextBefore = sourceText.slice(Math.max(0, link.index - 40), link.index);
       const contextAfter = sourceText.slice(link.index + link.original.length, link.index + link.original.length + 40);
-      results.unshift({ original: link.original, index: link.index, contextBefore, contextAfter, ...result });
+      results.push({ original: link.original, index: link.index, contextBefore, contextAfter, ...result });
       if (result.changed) {
-        output = `${output.slice(0, link.index)}${result.normalized}${output.slice(link.index + link.original.length)}`;
+        outputParts.push(sourceText.slice(outputCursor, link.index), result.normalized);
+        outputCursor = link.index + link.original.length;
       }
     }
 
+    const output = outputParts.length
+      ? `${outputParts.join("")}${sourceText.slice(outputCursor)}`
+      : sourceText;
     return { text: output, results };
   }
 

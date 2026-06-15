@@ -101,18 +101,31 @@
     const backupSaved = await saveBackupIfEnabled(selectedText, options);
     if (!backupSaved) return { changed: false, count: 0, error: "backup-save-failed" };
 
-    const range = selection.getRangeAt(0);
-    const replacement = document.createTextNode(result.text);
-    range.deleteContents();
-    range.insertNode(replacement);
-    dispatchInput(active, result.text);
-    selection.removeAllRanges();
+    const beforeElementText = active.textContent;
+    active.focus();
+    try {
+      if (typeof document.execCommand === "function") {
+        document.execCommand("insertText", false, result.text);
+      }
+    } catch (_error) {
+      // The unchanged-text check below selects the clipboard fallback.
+    }
+    const afterElementText = active.textContent;
+    if (afterElementText === beforeElementText) {
+      const copied = await writeClipboard(
+        result.text,
+        "編集欄を安全に書き換えられず、クリップボードへのコピーにも失敗しました。"
+      );
+      return copied
+        ? { changed: true, count: changedCount, copiedOnly: true }
+        : { changed: false, count: changedCount, error: "clipboard-copy-failed" };
+    }
+
     lastUndo = {
-      type: "contenteditable",
+      type: "contenteditable-native",
       element: active,
-      node: replacement,
-      beforeText: selectedText,
-      afterText: result.text,
+      beforeElementText,
+      afterElementText,
       count: changedCount
     };
     return { changed: true, count: changedCount };
@@ -211,12 +224,19 @@
       return { restored: true };
     }
 
-    if (lastUndo.type === "contenteditable") {
-      const { element, node, beforeText } = lastUndo;
-      if (!node || !node.isConnected || !node.parentNode) return { restored: false };
-      const replacement = document.createTextNode(beforeText);
-      node.parentNode.replaceChild(replacement, node);
-      dispatchInput(element, beforeText);
+    if (lastUndo.type === "contenteditable-native") {
+      const { element, beforeElementText, afterElementText } = lastUndo;
+      if (!element || !element.isConnected || element.textContent !== afterElementText) {
+        return { restored: false };
+      }
+
+      element.focus();
+      try {
+        if (typeof document.execCommand === "function") document.execCommand("undo");
+      } catch (_error) {
+        return { restored: false };
+      }
+      if (element.textContent !== beforeElementText) return { restored: false };
       lastUndo = null;
       return { restored: true };
     }

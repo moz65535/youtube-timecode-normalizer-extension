@@ -4,9 +4,9 @@ const { spawnSync } = require("child_process");
 const expected = {
   files: 35,
   extractedLinks: 14728,
-  changedLinks: 7630,
+  changedLinks: 7631,
   contaminatedCount: 0,
-  unsupportedTimecodeCount: 5,
+  unsupportedTimecodeCount: 4,
   invalidUrlCount: 0
 };
 

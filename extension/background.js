@@ -126,6 +126,10 @@ extensionApi.contextMenus.onClicked.addListener(async (info, tab) => {
     }
 
     if (response && response.changed) {
+      if (response.copiedOnly) {
+        await notifyTab(tab.id, `${response.count}件を正規化してクリップボードへコピーしました。編集欄は変更していません。`);
+        return;
+      }
       await notifyTab(tab.id, `${response.count}件のURLを正規化しました。`);
       return;
     }

@@ -281,6 +281,20 @@
           <td><code>https://youtu.be/PWS1ftGoeb8?t=1172</code></td>
           <td><input class="result-input" aria-label="崩れた時刻のコピー結果" data-expected="https://youtu.be/PWS1ftGoeb8?t=1172" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
         </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="小数秒を確認"></td>
+          <td>小数秒の切り捨て</td>
+          <td><a href="https://youtu.be/bmYMFh-0xG0?t=259.5s">259.5s</a></td>
+          <td><code>https://youtu.be/bmYMFh-0xG0?t=259</code></td>
+          <td><input class="result-input" aria-label="小数秒のコピー結果" data-expected="https://youtu.be/bmYMFh-0xG0?t=259" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="単位順序の崩れを確認"></td>
+          <td>時分秒の単位順序</td>
+          <td><a href="https://www.youtube.com/watch?v=URIcOeP-mL0&t=1m4h45s">1m4h45s</a></td>
+          <td><code>https://www.youtube.com/watch?v=URIcOeP-mL0&amp;t=14505</code></td>
+          <td><input class="result-input" aria-label="単位順序のコピー結果" data-expected="https://www.youtube.com/watch?v=URIcOeP-mL0&t=14505" placeholder="ここへ貼り付け"><span class="result-status"></span></td>
+        </tr>
       </tbody>
     </table>
 
@@ -318,6 +332,12 @@
           <td>YouTubeの動画以外</td>
           <td><a href="https://www.youtube.com/@hololive">チャンネルURL</a></td>
           <td>変換対象外として通知される</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" aria-label="ホスト名誤りを確認"></td>
+          <td>ホスト名誤り</td>
+          <td><a href="https://www.youtu.be/7fA3Ze1MeW8?t=1m">www.youtu.be</a></td>
+          <td>自動修復せず、疑わしい対象の「ホスト名誤り」に表示される</td>
         </tr>
       </tbody>
     </table>

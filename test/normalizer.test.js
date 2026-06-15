@@ -101,6 +101,46 @@ describe("URL normalization", () => {
       .toBe("https://www.youtube.com/watch?v=qhH-azW3LJw&t=60");
   });
 
+  it("floors non-negative decimal seconds", () => {
+    expect(normalizeUrl("https://youtu.be/qhH-azW3LJw?t=123.9").normalized)
+      .toBe("https://www.youtube.com/watch?v=qhH-azW3LJw&t=123");
+    expect(normalizeUrl("https://youtu.be/qhH-azW3LJw?t=259.5s").normalized)
+      .toBe("https://www.youtube.com/watch?v=qhH-azW3LJw&t=259");
+  });
+
+  it("rejects decimals without an integer part", () => {
+    expect(normalizeUrl("https://youtu.be/qhH-azW3LJw?t=.5").reason)
+      .toBe("unsupported-timecode");
+  });
+
+  it("repairs uniquely reorderable time units", () => {
+    const result = normalizeUrl("https://youtu.be/qhH-azW3LJw?t=1m4h45s");
+    expect(result).toMatchObject({
+      normalized: "https://www.youtube.com/watch?v=qhH-azW3LJw&t=14505",
+      hasMalformedTime: true
+    });
+  });
+
+  it("does not repair reordered units when repair is disabled", () => {
+    expect(normalizeUrl(
+      "https://youtu.be/qhH-azW3LJw?t=1h34s43m",
+      { repairMalformedTime: false }
+    ).reason).toBe("malformed-timecode");
+  });
+
+  it("does not guess time units with missing numbers", () => {
+    expect(normalizeUrl("https://youtu.be/qhH-azW3LJw?t=hm12s").reason)
+      .toBe("unsupported-timecode");
+  });
+
+  it("flags www.youtu.be as a mistyped host without changing it", () => {
+    expect(normalizeUrl("https://www.youtu.be/7fA3Ze1MeW8")).toMatchObject({
+      changed: false,
+      reason: "mistyped-youtube-host",
+      suspicious: true
+    });
+  });
+
   it("removes si when enabled", () => {
     expect(normalizeUrl(
       "https://www.youtube.com/watch?v=qhH-azW3LJw&si=tracking&t=1m",
