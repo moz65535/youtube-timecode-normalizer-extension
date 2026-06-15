@@ -19,6 +19,8 @@ describe("browser manifests", () => {
     });
     expect(firefoxManifest.browser_specific_settings.gecko.id)
       .toBe("youtube-timecode-normalizer@moz65535");
+    expect(firefoxManifest.browser_specific_settings.gecko.data_collection_permissions)
+      .toEqual({ required: ["none"] });
   });
 
   it("keeps shared metadata and permissions aligned", () => {

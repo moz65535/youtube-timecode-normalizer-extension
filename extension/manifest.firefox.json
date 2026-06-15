@@ -52,7 +52,12 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "youtube-timecode-normalizer@moz65535",
-      "strict_min_version": "121.0"
+      "strict_min_version": "121.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
     }
   }
 }
