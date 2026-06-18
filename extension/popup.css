@@ -57,6 +57,25 @@ h1 {
   font-weight: 700;
 }
 
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.popup-header a {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.popup-header a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 h2 {
   font-size: 13px;
   font-weight: 700;
@@ -289,21 +308,4 @@ button:disabled:hover {
 
 .compact {
   max-height: 140px;
-}
-
-.popup-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 2px 2px;
-}
-
-.popup-footer a {
-  color: var(--muted);
-  font-size: 12px;
-  text-decoration: none;
-}
-
-.popup-footer a:hover {
-  color: var(--accent);
-  text-decoration: underline;
 }
