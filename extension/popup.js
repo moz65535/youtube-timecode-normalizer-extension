@@ -4,6 +4,7 @@
   const extensionApi = globalThis.browser || globalThis.chrome;
   const BACKUP_STORAGE_KEY = "lastTextBackup";
   const elements = {
+    versionLabel: document.getElementById("versionLabel"),
     formatMode: document.getElementById("formatMode"),
     resetSettings: document.getElementById("resetSettings"),
     removeSi: document.getElementById("removeSi"),
@@ -38,6 +39,11 @@
   let currentSource = "page";
   let refreshSequence = 0;
   let settingsWriteQueue = Promise.resolve();
+
+  function renderVersion() {
+    if (!elements.versionLabel || !extensionApi.runtime || !extensionApi.runtime.getManifest) return;
+    elements.versionLabel.textContent = `v${extensionApi.runtime.getManifest().version}`;
+  }
 
   function status(message) {
     elements.status.textContent = message;
@@ -598,5 +604,6 @@
     }
   });
 
+  renderVersion();
   Promise.all([loadSettings(), refreshBackupInfo()]).then(refreshLinks);
 })();

@@ -64,8 +64,15 @@ h1 {
   gap: 10px;
 }
 
-.popup-header a {
+.header-links {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.popup-header a {
   color: var(--muted);
   font-size: 12px;
   text-decoration: none;
@@ -74,6 +81,11 @@ h1 {
 .popup-header a:hover {
   color: var(--accent);
   text-decoration: underline;
+}
+
+.version-label {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 h2 {
