@@ -300,9 +300,9 @@
   }
 
   async function jumpToLink(item, button) {
-    const showJumpError = (message) => {
+    const showJumpError = (message, error) => {
       status(message);
-      button.textContent = "再抽出してください";
+      button.textContent = error === "text-changed" ? "再抽出してください" : "移動できません";
       button.disabled = true;
     };
 
@@ -323,10 +323,19 @@
         return;
       }
 
-      showJumpError("編集内容が変わったため移動できません。もう一度抽出してください。");
+      showJumpError(jumpErrorMessage(response && response.error), response && response.error);
     } catch (_error) {
       showJumpError("該当位置へ移動できません。もう一度抽出してください。");
     }
+  }
+
+  function jumpErrorMessage(error) {
+    const messages = {
+      "stale-collection": "抽出情報が古くなっています。もう一度抽出してください。",
+      "target-unavailable": "抽出元の編集欄が見つかりません。もう一度抽出してください。",
+      "text-changed": "編集内容が変わったため移動できません。もう一度抽出してください。"
+    };
+    return messages[error] || "該当位置へ移動できません。もう一度抽出してください。";
   }
 
   function diffText(results) {

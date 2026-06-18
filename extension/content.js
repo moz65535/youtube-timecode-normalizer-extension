@@ -324,14 +324,88 @@
       return { jumped: false, error: "target-unavailable" };
     }
 
-    if (element.value.slice(target.start, target.end) !== original) {
-      return { jumped: false, error: "text-changed" };
+    let start = target.start;
+    let end = target.end;
+    if (element.value.slice(start, end) !== original) {
+      const recovered = findClosestTextControlMatch(original, target);
+      if (!recovered) return { jumped: false, error: "text-changed" };
+      start = recovered.start;
+      end = recovered.end;
+      lastLinkCollection = { id: target.collectionId, element: recovered.element };
     }
 
-    element.focus({ preventScroll: true });
-    element.setSelectionRange(target.start, target.end);
-    element.scrollIntoView({ block: "center", inline: "nearest" });
+    const targetElement = lastLinkCollection.element;
+    targetElement.focus({ preventScroll: true });
+    targetElement.setSelectionRange(start, end);
+    targetElement.scrollIntoView({ block: "center", inline: "nearest" });
+    scrollTextControlToSelection(targetElement, start);
     return { jumped: true };
+  }
+
+  function scrollTextControlToSelection(element, start) {
+    if (typeof element.scrollTop !== "number" || typeof element.value !== "string") return;
+
+    const style = getComputedStyle(element);
+    const fontSize = parseFloat(style.fontSize) || 16;
+    const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.2;
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const lineIndex = visualLineIndex(element, style, start);
+    const selectionTop = paddingTop + lineIndex * lineHeight;
+    const centeredTop = selectionTop - element.clientHeight / 2 + lineHeight;
+
+    element.scrollTop = Math.max(0, centeredTop);
+  }
+
+  function visualLineIndex(element, style, start) {
+    const textBeforeSelection = element.value.slice(0, start);
+    const lines = textBeforeSelection.split("\n");
+    const contentWidth = element.clientWidth
+      - (parseFloat(style.paddingLeft) || 0)
+      - (parseFloat(style.paddingRight) || 0);
+    if (contentWidth <= 0 || style.whiteSpace === "pre") return lines.length - 1;
+
+    const canvas = visualLineIndex.canvas || (visualLineIndex.canvas = document.createElement("canvas"));
+    const context = canvas.getContext("2d");
+    if (!context) return lines.length - 1;
+
+    context.font = style.font;
+    let visualLines = 0;
+    for (const line of lines.slice(0, -1)) {
+      visualLines += wrappedLineCount(context, contentWidth, line);
+    }
+    visualLines += wrappedLineCount(context, contentWidth, lines[lines.length - 1]) - 1;
+    return Math.max(0, visualLines);
+  }
+
+  function wrappedLineCount(context, contentWidth, line) {
+    if (!line) return 1;
+    return Math.max(1, Math.ceil(context.measureText(line).width / contentWidth));
+  }
+
+  function textControlCandidates(preferredElement) {
+    const controls = Array.from(document.querySelectorAll("textarea, input[type='text']"))
+      .filter((element) => element.isConnected && typeof element.value === "string");
+    if (!preferredElement || !controls.includes(preferredElement)) return controls;
+    return [preferredElement, ...controls.filter((element) => element !== preferredElement)];
+  }
+
+  function findClosestTextControlMatch(original, target) {
+    const matches = [];
+    for (const element of textControlCandidates(lastLinkCollection && lastLinkCollection.element)) {
+      let index = element.value.indexOf(original);
+      while (index >= 0) {
+        matches.push({
+          element,
+          start: index,
+          end: index + original.length,
+          distance: Math.abs(index - target.start)
+        });
+        index = element.value.indexOf(original, index + Math.max(1, original.length));
+      }
+    }
+
+    matches.sort((a, b) => a.distance - b.distance);
+    return matches[0] || null;
   }
 
   extensionApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {

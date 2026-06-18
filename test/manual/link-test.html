@@ -444,10 +444,12 @@ URL不正 https://%</pre>
       <li>popupが閉じ、下のtextarea内にある2件目のURLだけが選択されることを確認します。</li>
       <li>「5秒後に文字を変更」を押してから、5秒以内に試験範囲を選択し、popupで抽出します。</li>
       <li>文字が自動変更された後に「位置へ移動」を押し、そのボタンが「再抽出してください」に変わることを確認します。</li>
+      <li>「5秒後に先頭行だけ追加」を押してから抽出し、自動変更後も2件目へ移動できることを確認します。</li>
     </ol>
     <div class="editor-actions">
       <button id="selectJumpSample" type="button">移動試験範囲を選択</button>
       <button id="scheduleJumpMutation" type="button">5秒後に文字を変更</button>
+      <button id="scheduleJumpPrefixMutation" type="button">5秒後に先頭行だけ追加</button>
       <strong id="jumpSelectionStatus" aria-live="polite"></strong>
     </div>
     <textarea id="jumpSample" class="count-check" spellcheck="false">1件目 https://www.youtube.com/watch?v=qhH-azW3LJw&t=abc
@@ -708,6 +710,16 @@ Wiki構文 [[ライブ>>https://www.youtube.com/live/6mdcWcjeQcA?t=2765s]]
       window.setTimeout(() => {
         jumpSample.value = `変更済み\n${jumpSample.value}`;
         status.textContent = "textareaを変更しました。popupの古い抽出結果から移動してください。";
+      }, 5000);
+    });
+
+    document.getElementById("scheduleJumpPrefixMutation").addEventListener("click", () => {
+      const jumpSample = document.getElementById("jumpSample");
+      const status = document.getElementById("jumpSelectionStatus");
+      status.textContent = "5秒後にtextareaの先頭へ、URLを含まない行を追加します。";
+      window.setTimeout(() => {
+        jumpSample.value = `先頭に追加された行\n${jumpSample.value}`;
+        status.textContent = "先頭行を追加しました。popupの古い抽出結果から移動してください。";
       }, 5000);
     });
 
