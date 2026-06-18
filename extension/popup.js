@@ -3,6 +3,14 @@
 
   const extensionApi = globalThis.browser || globalThis.chrome;
   const BACKUP_STORAGE_KEY = "lastTextBackup";
+  const DEFAULT_VISIBLE_SUSPICIOUS_CATEGORIES = new Set([
+    "list",
+    "malformed",
+    "unsupported-timecode",
+    "mistyped-youtube-host",
+    "invalid-url",
+    "other"
+  ]);
   const elements = {
     versionLabel: document.getElementById("versionLabel"),
     formatMode: document.getElementById("formatMode"),
@@ -117,9 +125,10 @@
     const defaults = { ...YTNormalizer.DEFAULT_OPTIONS };
     await queueStoredOptions(defaults);
     applyOptions(defaults);
-    for (const input of document.querySelectorAll(".filters input[type='checkbox']")) {
+    for (const input of elements.filters.querySelectorAll("input[type='checkbox']")) {
       input.checked = true;
     }
+    resetSuspiciousFilters();
 
     if (currentSource === "manual") {
       previewManualText();
@@ -127,6 +136,12 @@
       await refreshLinks();
     }
     status("初期設定に戻しました。");
+  }
+
+  function resetSuspiciousFilters() {
+    for (const input of elements.suspiciousFilters.querySelectorAll("input[type='checkbox']")) {
+      input.checked = DEFAULT_VISIBLE_SUSPICIOUS_CATEGORIES.has(input.value);
+    }
   }
 
   function formatBackupDate(savedAt) {
