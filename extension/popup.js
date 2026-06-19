@@ -47,6 +47,7 @@
   let currentSource = "page";
   let refreshSequence = 0;
   let settingsWriteQueue = Promise.resolve();
+  let backupFeedbackTimer = null;
 
   function renderVersion() {
     if (!elements.versionLabel || !extensionApi.runtime || !extensionApi.runtime.getManifest) return;
@@ -157,6 +158,11 @@
   }
 
   function renderBackupInfo(backup) {
+    if (backupFeedbackTimer) {
+      clearTimeout(backupFeedbackTimer);
+      backupFeedbackTimer = null;
+    }
+
     if (!backup || typeof backup.text !== "string") {
       elements.backupInfo.textContent = "保存済みバックアップはありません。";
       elements.backupInfo.removeAttribute("title");
@@ -173,6 +179,16 @@
       elements.backupInfo.removeAttribute("title");
     }
     elements.copySavedBackup.disabled = false;
+  }
+
+  function showBackupCopyFeedback(backup) {
+    if (backupFeedbackTimer) clearTimeout(backupFeedbackTimer);
+    elements.backupInfo.textContent = `バックアップをコピーしました（${backup.text.length}文字）。`;
+    elements.backupInfo.removeAttribute("title");
+    backupFeedbackTimer = setTimeout(() => {
+      backupFeedbackTimer = null;
+      renderBackupInfo(backup);
+    }, 2500);
   }
 
   async function refreshBackupInfo() {
@@ -544,8 +560,10 @@
     try {
       await navigator.clipboard.writeText(text);
       status(doneMessage);
+      return true;
     } catch (_error) {
       status("クリップボードへコピーできませんでした。");
+      return false;
     }
   }
 
@@ -586,7 +604,9 @@
         return;
       }
 
-      await copyText(backup.text, `保存済みバックアップをコピーしました（${backup.text.length}文字）。`);
+      if (await copyText(backup.text, `保存済みバックアップをコピーしました（${backup.text.length}文字）。`)) {
+        showBackupCopyFeedback(backup);
+      }
     } catch (_error) {
       status("保存済みバックアップを読み込めませんでした。");
     }
