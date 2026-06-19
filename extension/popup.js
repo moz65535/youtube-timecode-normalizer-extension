@@ -488,7 +488,7 @@
         const openOriginalButton = document.createElement("button");
         openOriginalButton.type = "button";
         openOriginalButton.className = "small-action-button";
-        openOriginalButton.textContent = "変換前を開く";
+        openOriginalButton.textContent = item.normalized && item.normalized !== item.original ? "変換前を開く" : "URLを開く";
         openOriginalButton.addEventListener("click", () => openUrl(item.original, openOriginalButton));
         meta.appendChild(openOriginalButton);
 
