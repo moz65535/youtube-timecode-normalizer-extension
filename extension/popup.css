@@ -254,12 +254,16 @@ button:disabled:hover {
   font-size: 12px;
 }
 
-.jump-button {
+.small-action-button {
   min-height: 24px;
   margin-left: auto;
   padding: 2px 7px;
   color: var(--accent);
   font-size: 12px;
+}
+
+.small-action-button + .small-action-button {
+  margin-left: 0;
 }
 
 .badge {

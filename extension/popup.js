@@ -366,6 +366,25 @@
     }
   }
 
+  async function openUrl(url, button) {
+    const originalLabel = button.textContent;
+    try {
+      button.disabled = true;
+      await extensionApi.tabs.create({ url, active: false });
+      button.textContent = "開きました";
+      setTimeout(() => {
+        if (button.isConnected && button.textContent === "開きました") {
+          button.textContent = originalLabel;
+        }
+      }, 2000);
+    } catch (_error) {
+      button.textContent = "開けません";
+      status("URLを開けませんでした。");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   function jumpErrorMessage(error) {
     const messages = {
       "stale-collection": "抽出情報が古くなっています。もう一度抽出してください。",
@@ -465,10 +484,27 @@
         malformedBadge.textContent = "崩れ時刻";
         meta.appendChild(malformedBadge);
       }
+      if (includeOnlySuspicious) {
+        const openOriginalButton = document.createElement("button");
+        openOriginalButton.type = "button";
+        openOriginalButton.className = "small-action-button";
+        openOriginalButton.textContent = "変換前を開く";
+        openOriginalButton.addEventListener("click", () => openUrl(item.original, openOriginalButton));
+        meta.appendChild(openOriginalButton);
+
+        if (item.normalized && item.normalized !== item.original) {
+          const openNormalizedButton = document.createElement("button");
+          openNormalizedButton.type = "button";
+          openNormalizedButton.className = "small-action-button";
+          openNormalizedButton.textContent = "変換後を開く";
+          openNormalizedButton.addEventListener("click", () => openUrl(item.normalized, openNormalizedButton));
+          meta.appendChild(openNormalizedButton);
+        }
+      }
       if (includeOnlySuspicious && item.jumpTarget) {
         const jumpButton = document.createElement("button");
         jumpButton.type = "button";
-        jumpButton.className = "jump-button";
+        jumpButton.className = "small-action-button";
         jumpButton.textContent = "位置へ移動";
         jumpButton.addEventListener("click", () => jumpToLink(item, jumpButton));
         meta.appendChild(jumpButton);
